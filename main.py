@@ -89,37 +89,25 @@ st.markdown(f"""
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
 # --- 5. 翻頁導航列 (具備方框的按鈕) ---
-# 使用 st.columns 將畫面上方橫向切分為三區，比例 [1, 2, 1] 確保左右按鈕夠大
-nav_cols = st.columns([1, 2, 1])
+st.markdown('<div class="nav-container">', unsafe_allow_html=True)
+nav_btn_cols = st.columns(2)
 
-with nav_cols[0]:
-    # 使用 st.button 會自動產生一個帶有方框的實體按鈕
-    # use_container_width=True 會讓方框填滿左側區塊，更好點擊
-    if st.button("<", key="nav_prev", use_container_width=True):
-        st.session_state.curr_month -= 1
-        if st.session_state.curr_month == 0:
-            st.session_state.curr_month = 12
-            st.session_state.curr_year -= 1
-        st.rerun()
+with nav_btn_cols[0]:
+    if st.button("Last Month", key="btn_last", use_container_width=True):
+        st.session_state.curr_month -= 1
+        if st.session_state.curr_month == 0:
+            st.session_state.curr_month = 12
+            st.session_state.curr_year -= 1
+        st.rerun()
 
-with nav_cols[1]:
-    # 將年月顯示在中間，並加上一些上邊距讓它跟兩側按鈕對齊
-    st.markdown(f"""
-        <div style="text-align: center; padding-top: 5px;">
-            <h2 style="margin: 0; color: {t['title']}; font-size: 1.5rem;">
-                {st.session_state.curr_year} / {st.session_state.curr_month:02d}
-            </h2>
-        </div>
-    """, unsafe_allow_html=True)
-
-with nav_cols[2]:
-    # 右側的方框按鈕
-    if st.button(">", key="nav_next", use_container_width=True):
-        st.session_state.curr_month += 1
-        if st.session_state.curr_month == 13:
-            st.session_state.curr_month = 1
-            st.session_state.curr_year += 1
-        st.rerun()
+with nav_btn_cols[1]:
+    if st.button("Next Month", key="btn_next", use_container_width=True):
+        st.session_state.curr_month += 1
+        if st.session_state.curr_month == 13:
+            st.session_state.curr_month = 1
+            st.session_state.curr_year += 1
+        st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 6. 裝飾圖片區 ---
 # 圖片移動到導航列下方，避免與翻頁按鈕擠在一起
