@@ -15,6 +15,7 @@ SPECIAL_DAYS = {
     "08-14": "HUENINGKAI Day"
 }
 
+
 THEMES = {
     "orange": {"bg": "#FFF5EE", "title": "#E9967A", "special_bg": "#FFDAB9", "imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg", "fox04.jpg", "fox05.jpg", "fox06.jpg"]},
     "blue": {"bg": "#F0F8FF", "title": "#4682B4", "special_bg": "#C6E2FF", "imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg", "dog04.jpg", "dog05.jpg", "dog06.jpg"]},
@@ -174,5 +175,4 @@ if st.session_state.editing_date:
             st.rerun()
         if c2.button("取消"):
             st.session_state.editing_date = None
-            st.rerun() 加上去
-按鈕不要陰影
+            st.rerun() 
