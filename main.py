@@ -47,6 +47,7 @@ if 'year' not in st.session_state: st.session_state.year = 2026
 if 'month' not in st.session_state: st.session_state.month = 4
 
 # --- 5. 核心 HTML/JS ---
+# 使用雙大括號 {{ }} 來轉義 Python f-string
 html_code = f"""
 <div id="moa-app" style="background: {t['bg']}; padding: 12px; font-family: sans-serif; border-radius: 15px; min-height: 850px;">
     
@@ -83,7 +84,9 @@ html_code = f"""
 </div>
 
 <script>
-    let curY = {st.session_state.year}, curM = {st.session_state.month}, selId = null;
+    let curY = {st.session_state.year};
+    let curM = {st.session_state.month};
+    let selId = null;
 
     const ANNIVERSARIES = {{
         "03-04": "🎉 Debut Day",
@@ -97,48 +100,68 @@ html_code = f"""
 
     function render(y, m) {{
         const grid = document.getElementById('calendar-grid');
-        document.getElementById('currentDisplay').innerText = y + " / " + String(m).padStart(2, '0');
+        const display = document.getElementById('currentDisplay');
+        if(!grid || !display) return;
+
+        display.innerText = y + " / " + String(m).padStart(2, '0');
         grid.innerHTML = '';
         
-        ['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(n => {{
-            grid.innerHTML += `<div style="text-align:center; font-size:11px; color:{t['title']}; font-weight:bold; padding:5px;">${{n}}</div>`;
+        const weeks = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+        weeks.forEach(n => {{
+            const wk = document.createElement('div');
+            wk.style = "text-align:center; font-size:11px; color:{t['title']}; font-weight:bold; padding:5px;";
+            wk.innerText = n;
+            grid.appendChild(wk);
         }});
 
-        const first = new Date(y, m-1, 1).getDay();
-        const days = new Date(y, m, 0).getDate();
-        const offset = (first === 0) ? 6 : first - 1;
+        const firstDay = new Date(y, m-1, 1).getDay();
+        const daysInMonth = new Date(y, m, 0).getDate();
+        const offset = (firstDay === 0) ? 6 : firstDay - 1;
 
-        for(let i=0; i<offset; i++) grid.innerHTML += '<div></div>';
+        for(let i=0; i<offset; i++) {{
+            grid.appendChild(document.createElement('div'));
+        }}
 
-        for(let i=1; i<=days; i++) {{
-            let mmdd = String(m).padStart(2, '0') + "-" + String(i).padStart(2, '0');
-            let k = y + "-" + mmdd;
-            let note = localStorage.getItem(k) || "";
+        for(let i=1; i<=daysInMonth; i++) {{
+            const mmdd = String(m).padStart(2, '0') + "-" + String(i).padStart(2, '0');
+            const k = y + "-" + mmdd;
+            const note = localStorage.getItem(k) || "";
             
-            let anniHtml = ANNIVERSARIES[mmdd] ? 
-                `<div style="background:{t['title']}; color:white; font-size:9px; padding:2px; text-align:center; font-weight:bold; border-radius:2px; margin-bottom:2px;">${{ANNIVERSARIES[mmdd]}}</div>` : "";
-
-            let cell = document.createElement('div');
+            const cell = document.createElement('div');
             cell.id = "c-" + k;
-            cell.onclick = () => {{
+            cell.style = "background:white; border:1px solid #eee; height:110px; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; cursor:pointer;";
+            
+            // 紀念日 HTML
+            let anniHtml = "";
+            if(ANNIVERSARIES[mmdd]) {{
+                anniHtml = '<div style="background:{t['title']}; color:white; font-size:9px; padding:2px; text-align:center; font-weight:bold; border-radius:2px; margin-bottom:2px;">' + ANNIVERSARIES[mmdd] + '</div>';
+            }}
+
+            cell.innerHTML = 
+                '<div style="font-size:10px; padding:4px; color:#999;">' + String(i).padStart(2, '0') + '</div>' +
+                '<div style="padding: 0 4px;">' + anniHtml + '</div>' +
+                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:11px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box;">' + note + '</textarea>';
+
+            cell.onclick = function(e) {{
+                if(e.target.tagName === 'TEXTAREA') {{
+                    selId = k;
+                    this.style.border = "2px solid {t['title']}";
+                    return;
+                }}
                 if(selId) {{
-                    let prev = document.getElementById("c-" + selId);
+                    const prev = document.getElementById("c-" + selId);
                     if(prev) prev.style.border = "1px solid #eee";
                 }}
                 selId = k;
-                cell.style.border = "2px solid {t['title']}";
+                this.style.border = "2px solid {t['title']}";
             }};
-            
-            cell.style = "background:white; border:1px solid #eee; height:110px; display:flex; flex-direction:column; border-radius:8px; overflow:hidden;";
-            
-            // 使用反引號正確注入 note 內容
-            cell.innerHTML = \`
-                <div style="font-size:10px; padding:4px; color:#999;">\${{String(i).padStart(2, '0')}}</div>
-                <div style="padding: 0 4px;">\${{anniHtml}}</div>
-                <textarea id="i-\${{k}}" oninput="localStorage.setItem('\${{k}}', this.value)" 
-                    style="flex:1; border:none; outline:none; font-size:11px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box;">\${{note}}</textarea>
-            \`;
-            
+
+            // 監聽輸入存檔
+            const area = cell.querySelector('textarea');
+            area.oninput = function() {{
+                localStorage.setItem(k, this.value);
+            }};
+
             grid.appendChild(cell);
         }}
     }}
@@ -152,9 +175,11 @@ html_code = f"""
 
     function addTag(tag) {{
         if(!selId) {{ alert("請先點選日期格！"); return; }}
-        let el = document.getElementById("i-" + selId);
-        el.value = (el.value + " " + tag).trim();
-        localStorage.setItem(selId, el.value);
+        const el = document.getElementById("i-" + selId);
+        if(el) {{
+            el.value = (el.value + " " + tag).trim();
+            localStorage.setItem(selId, el.value);
+        }}
     }}
 
     render(curY, curM);
