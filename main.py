@@ -14,23 +14,24 @@ def get_img_64(name):
 
 # --- 3. 完整主題與圖片連動設定 ---
 THEMES = {
-    "orange": {
+    "YEONJUN": {
         "bg": "#FFF5EE", "title": "#E9967A",
         "imgs": [f"fox0{i}.jpg" for i in range(1, 7)]
     },
-    "pink": {
-        "bg": "#FFF0F5", "title": "#DB7093",
-        "imgs": [f"bear0{i}.jpg" for i in range(1, 7)]
-    },
-    "grey": {
-        "bg": "#F5F5F5", "title": "#708090",
-        "imgs": [f"cat0{i}.jpg" for i in range(1, 7)]
-    },
-    "blue": {
+    "SOOBIN": {
         "bg": "#F0F8FF", "title": "#4682B4",
         "imgs": [f"dog0{i}.jpg" for i in range(1, 7)]
     },
-    "purple": {
+    "BEOMGYU": {
+        "bg": "#FFF0F5", "title": "#DB7093",
+        "imgs": [f"bear0{i}.jpg" for i in range(1, 7)]
+    },
+    "TAEHYUN": {
+        "bg": "#F5F5F5", "title": "#708090",
+        "imgs": [f"cat0{i}.jpg" for i in range(1, 7)]
+    },
+
+    "HUENINGKAI": {
         "bg": "#F8F4FF", "title": "#9370DB",
         "imgs": [f"ang0{i}.jpg" for i in range(1, 7)]
     }
@@ -86,8 +87,8 @@ html_code = f"""
     let selId = null;
 
     const ANNIVERSARIES = {{
-        "03-04": "🎉 Debut Day", "08-22": "💙 MOA Day", "09-13": "🦊 YEONJUN",
-        "12-05": "🐰 SOOBIN", "03-13": "🧸 BEOMGYU", "02-05": "🐿️ TAEHYUN", "08-14": "🐧 HUENINGKAI"
+        "03-04": "🎉 Debut Day", "08-22": "💙 MOA Day", "09-13": "🦊 ",
+        "12-05": "🐰 ", "03-13": "🧸 ", "02-05": "🐿️ ", "08-14": "🐧"
     }};
 
     function render(y, m) {{
