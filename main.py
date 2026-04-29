@@ -2,9 +2,10 @@ import streamlit as st
 import calendar
 import json
 import os
+from PIL import Image
 
 # 頁面配置
-st.set_page_config(page_title="MOA Diary Direct", layout="wide")
+st.set_page_config(page_title="MOA Diary Grid", layout="wide")
 
 # --- 1. 核心資料 ---
 SPECIAL_DAYS = {
@@ -31,7 +32,7 @@ if 'notes' not in st.session_state:
 if 'curr_year' not in st.session_state: st.session_state.curr_year = 2026
 if 'curr_month' not in st.session_state: st.session_state.curr_month = 4
 
-# --- 3. UI 樣式 (關鍵：拔掉輸入框外框) ---
+# --- 3. UI 樣式 ---
 st.sidebar.title("設定")
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
@@ -39,60 +40,70 @@ t = THEMES[theme_choice]
 st.markdown(f"""
     <style>
     .stApp {{ background-color: {t['bg']}; }}
-    h1, h2 {{ color: {t['title']} !important; text-align: center; }}
+    h1, h2 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 讓每一個日曆格子容器有邊框 */
-    .day-box {{
-        border: 1px solid {t['title']};
-        border-radius: 5px;
-        padding: 5px;
-        background-color: white;
-        min-height: 120px;
-        margin-bottom: 5px;
+    /* 日期顯示列 */
+    .date-header {{
+        background-color: {t['title']};
+        color: white;
+        font-weight: bold;
+        padding: 2px 8px;
+        border-radius: 4px 4px 0 0;
+        font-size: 0.9rem;
+        display: flex;
+        justify-content: space-between;
     }}
-    .special-box {{ background-color: {t['special_bg']} !important; }}
+    
+    /* 特別日子的日期列顏色 */
+    .special-header {{
+        background-color: #FF6B6B !important;
+    }}
 
-    /* 拔掉 Streamlit 輸入框的樣式，讓它像在格子內打字 */
+    /* 輸入方框的樣式微調 */
     div[data-baseweb="textarea"] {{
-        background-color: transparent !important;
-        border: none !important;
-        padding: 0 !important;
+        border: 1px solid {t['title']} !important;
+        border-top: none !important; /* 與上方日期列接合 */
+        border-radius: 0 0 4px 4px !important;
+        background-color: white !important;
     }}
+    
     textarea {{
-        background-color: transparent !important;
-        color: #333 !important;
-        font-size: 0.85rem !important;
-        border: none !important;
-        resize: none !important;
+        font-size: 0.8rem !important;
+        padding: 5px !important;
     }}
-    /* 隱藏輸入框的標籤 */
+
+    /* 隱藏標籤空間 */
     div[data-testid="stWidgetLabel"] {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部導航 ---
+# --- 4. 標題與導航 ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
+
 c1, c2 = st.columns(2)
-if c1.button("上個月", use_container_width=True):
-    st.session_state.curr_month -= 1
-    if st.session_state.curr_month == 0:
-        st.session_state.curr_month = 12
-        st.session_state.curr_year -= 1
-    st.rerun()
-if c2.button("下個月", use_container_width=True):
-    st.session_state.curr_month += 1
-    if st.session_state.curr_month == 13:
-        st.session_state.curr_month = 1
-        st.session_state.curr_year += 1
-    st.rerun()
+with c1:
+    if st.button("上個月", use_container_width=True):
+        st.session_state.curr_month -= 1
+        if st.session_state.curr_month == 0:
+            st.session_state.curr_month = 12
+            st.session_state.curr_year -= 1
+        st.rerun()
+with c2:
+    if st.button("下個月", use_container_width=True):
+        st.session_state.curr_month += 1
+        if st.session_state.curr_month == 13:
+            st.session_state.curr_month = 1
+            st.session_state.curr_year += 1
+        st.rerun()
 
 st.markdown(f"<h2>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</h2>", unsafe_allow_html=True)
 
 # --- 5. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
 week_head = st.columns(7)
-for i, d in enumerate(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]):
-    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin:0;'><b>{d}</b></p>", unsafe_allow_html=True)
+week_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+for i, d in enumerate(week_names):
+    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin:0; font-size:0.7rem;'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     cols = st.columns(7)
@@ -103,36 +114,34 @@ for week in cal:
             is_special = short_key in SPECIAL_DAYS
             
             with cols[i]:
-                # 格子外層容器
-                box_class = "day-box special-box" if is_special else "day-box"
+                # 1. 上方日期顯示列
+                header_class = "date-header special-header" if is_special else "date-header"
                 heart = "❤️" if is_special else ""
-                
-                # 顯示日期與標籤
                 st.markdown(f"""
-                    <div class="{box_class}">
-                        <div style="color:{t['title']}; font-weight:bold;">{day:02d} {heart}</div>
+                    <div class="{header_class}">
+                        <span>{day:02d} {heart}</span>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # 直接嵌入輸入框 (Text Area)
-                # 這裡使用 st.text_area 讓你可以換行輸入
+                # 2. 下方打字方框
                 current_text = st.session_state.notes.get(date_key, "")
                 new_text = st.text_area(
                     label=date_key,
                     value=current_text,
                     key=f"input-{date_key}",
-                    height=80
+                    height=90
                 )
                 
-                # 自動儲存機制：如果內容變動就存檔
+                # 特別日子的備註文字 (顯示在方框最下面)
+                if is_special:
+                    st.markdown(f"<div style='font-size:0.6rem; color:#FF6B6B; text-align:center; margin-top:-5px;'>{SPECIAL_DAYS[short_key]}</div>", unsafe_allow_html=True)
+                
+                # 儲存邏輯
                 if new_text != current_text:
                     st.session_state.notes[date_key] = new_text
                     with open("grid_notes.json", 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
 
-                # 特別日子的底部標籤
-                if is_special:
-                    st.markdown(f"<div style='font-size:0.65rem; color:{t['title']}; text-align:right;'>{SPECIAL_DAYS[short_key]}</div>", unsafe_allow_html=True)
-
 # 底部提醒
-st.info("💡 內容會在你輸入完成並點擊格子外部或按 Ctrl+Enter 時自動儲存。")
+st.markdown("---")
+st.caption("💡 提示：輸入完畢後點擊格子以外的地方即可自動儲存。")
