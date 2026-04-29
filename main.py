@@ -84,38 +84,44 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部標題與左右翻頁 ---
-# 使用 columns 布局，將 < 和 > 放在標題兩側
-head_l, head_main, head_r = st.columns([1, 4, 1])
+# --- 4. 頂部標題 ---
+st.title("✨ MOA Diary")
 
-with head_l:
-    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-    if st.button("<", key="prev_mo"):
+# --- 5. 翻頁導航與年月顯示 (整合區塊) ---
+# 使用較集中的比例 [1, 2, 1] 確保在手機上不會散開
+nav_l, nav_m, nav_r = st.columns([1, 2, 1])
+
+with nav_l:
+    # 增加 use_container_width 讓按鈕在手機上更好點擊
+    if st.button("＜", key="prev_mo_nav", use_container_width=True):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
-with head_main:
-    st.title("✨ MOA Diary")
+with nav_m:
+    # 將年月顯示放在中間欄位，並確保文字置中
+    st.markdown(f"""
+        <h2 style='text-align: center; margin: 0; padding-top: 5px; color: {t['title']};'>
+            {st.session_state.curr_year} / {st.session_state.curr_month:02d}
+        </h2>
+    """, unsafe_allow_html=True)
 
-with head_r:
-    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-    if st.button(">", key="next_mo"):
+with nav_r:
+    if st.button("＞", key="next_mo_nav", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 5. 縮小圖裝飾 ---
+# --- 6. 縮小圖裝飾 ---
+# 裝飾圖移到導航列下方，避免遮擋按鈕觸控區域
 img_cols = st.columns(6)
 for idx, img_name in enumerate(t["imgs"]):
     if os.path.exists(img_name):
-        img_cols[idx].image(Image.open(img_name), width=45)
+        img_cols[idx].image(Image.open(img_name), use_container_width=True)
 
 # --- 6. 年月顯示 ---
 st.subheader(f"{st.session_state.curr_year} / {st.session_state.curr_month:02d}")
