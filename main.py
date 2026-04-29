@@ -39,15 +39,12 @@ THEMES = {
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
 
-# 預先讀取當前主題的 6 張圖片 Base64
 current_imgs = [get_img_64(img_name) for img_name in t["imgs"]]
 
-# --- 4. 月份狀態初始化 ---
 if 'year' not in st.session_state: st.session_state.year = 2026
 if 'month' not in st.session_state: st.session_state.month = 4
 
 # --- 5. 核心 HTML/JS ---
-# 使用雙大括號 {{ }} 來轉義 Python f-string
 html_code = f"""
 <div id="moa-app" style="background: {t['bg']}; padding: 12px; font-family: sans-serif; border-radius: 15px; min-height: 850px;">
     
@@ -80,22 +77,17 @@ html_code = f"""
         <button onclick="addTag('★回歸')" style="border-radius:20px; border:none; background:{t['title']}; color:white; padding:6px 15px; cursor:pointer;">💿 回歸</button>
     </div>
 
-    <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;"></div>
+    <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;"></div>
 </div>
 
 <script>
     let curY = {st.session_state.year};
     let curM = {st.session_state.month};
-    let selId = null;
+    let selId = null; // 用於標籤插入
 
     const ANNIVERSARIES = {{
-        "03-04": "🎉 Debut Day",
-        "08-22": "💙 MOA Day",
-        "09-13": "🦊 YEONJUN",
-        "12-05": "🐰 SOOBIN",
-        "03-13": "🧸 BEOMGYU",
-        "02-05": "🐿️ TAEHYUN",
-        "08-14": "🐧 HUENINGKAI"
+        "03-04": "🎉 Debut Day", "08-22": "💙 MOA Day", "09-13": "🦊 YEONJUN",
+        "12-05": "🐰 SOOBIN", "03-13": "🧸 BEOMGYU", "02-05": "🐿️ TAEHYUN", "08-14": "🐧 HUENINGKAI"
     }};
 
     function render(y, m) {{
@@ -106,8 +98,7 @@ html_code = f"""
         display.innerText = y + " / " + String(m).padStart(2, '0');
         grid.innerHTML = '';
         
-        const weeks = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
-        weeks.forEach(n => {{
+        ['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(n => {{
             const wk = document.createElement('div');
             wk.style = "text-align:center; font-size:11px; color:{t['title']}; font-weight:bold; padding:5px;";
             wk.innerText = n;
@@ -118,9 +109,7 @@ html_code = f"""
         const daysInMonth = new Date(y, m, 0).getDate();
         const offset = (firstDay === 0) ? 6 : firstDay - 1;
 
-        for(let i=0; i<offset; i++) {{
-            grid.appendChild(document.createElement('div'));
-        }}
+        for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
 
         for(let i=1; i<=daysInMonth; i++) {{
             const mmdd = String(m).padStart(2, '0') + "-" + String(i).padStart(2, '0');
@@ -129,42 +118,35 @@ html_code = f"""
             
             const cell = document.createElement('div');
             cell.id = "c-" + k;
-            cell.style = "background:white; border:1px solid #eee; height:110px; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; cursor:pointer;";
+            // 固定邊框厚度與顏色，移除 transition 效果
+            cell.style = "background:white; border:2.5px solid {t['title']}; height:110px; display:flex; flex-direction:column; border-radius:12px; overflow:hidden;";
             
-            // 紀念日 HTML
             let anniHtml = "";
             if(ANNIVERSARIES[mmdd]) {{
-                anniHtml = '<div style="background:{t['title']}; color:white; font-size:9px; padding:2px; text-align:center; font-weight:bold; border-radius:2px; margin-bottom:2px;">' + ANNIVERSARIES[mmdd] + '</div>';
+                anniHtml = '<div style="background:{t['title']}; color:white; font-size:9px; padding:2px; text-align:center; font-weight:bold; border-radius:0px; margin-bottom:2px;">' + ANNIVERSARIES[mmdd] + '</div>';
             }}
 
             cell.innerHTML = 
-                '<div style="font-size:10px; padding:4px; color:#999;">' + String(i).padStart(2, '0') + '</div>' +
+                '<div style="font-size:10px; padding:4px; color:{t['title']}; font-weight:bold;">' + String(i).padStart(2, '0') + '</div>' +
                 '<div style="padding: 0 4px;">' + anniHtml + '</div>' +
-                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:11px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box;">' + note + '</textarea>';
+                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:11px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box; font-family:inherit;">' + note + '</textarea>';
 
-            cell.onclick = function(e) {{
-                if(e.target.tagName === 'TEXTAREA') {{
-                    selId = k;
-                    this.style.border = "2px solid {t['title']}";
-                    return;
-                }}
-                if(selId) {{
-                    const prev = document.getElementById("c-" + selId);
-                    if(prev) prev.style.border = "1px solid #eee";
-                }}
+            // 點擊只記錄 ID 用於 addTag，但不改變樣式
+            cell.onclick = function() {{
                 selId = k;
-                this.style.border = "2px solid {t['title']}";
             }};
 
-            // 監聽輸入存檔
             const area = cell.querySelector('textarea');
             area.oninput = function() {{
                 localStorage.setItem(k, this.value);
             }};
+            area.onfocus = function() {{
+                selId = k;
+            }};
 
             grid.appendChild(cell);
         }}
-    }}
+    }
 
     function changeMonth(s) {{
         curM += s;
