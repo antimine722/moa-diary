@@ -129,13 +129,10 @@ with col_right:
 st.columns(4) # 這裡可以放你的 生咖/演唱會 等標籤按鈕
 # --- 6. 縮小圖裝飾 ---
 # 裝飾圖移到導航列下方，避免遮擋按鈕觸控區域
-img_cols = st.columns(6)
-for idx, img_name in enumerate(t["imgs"]):
-    if os.path.exists(img_name):
-        img_cols[idx].image(Image.open(img_name), use_container_width=True)
+
 
 # --- 6. 年月顯示 ---
-st.subheader(f"{st.session_state.curr_year} / {st.session_state.curr_month:02d}")
+
 
 # --- 7. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
