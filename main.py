@@ -87,8 +87,8 @@ html_code = f"""
     let selId = null;
 
     const ANNIVERSARIES = {{
-        "03-04": "🎉 Debut Day", "08-22": "💙 MOA Day", "09-13": "🦊 ",
-        "12-05": "🐰 ", "03-13": "🧸 ", "02-05": "🐿️ ", "08-14": "🐧"
+        "03-04": "🎉 Debut Day", "08-22": "💙 MOA Day", "09-13": "🦊 YJ ",
+        "12-05": "🐰SB ", "03-13": "🧸 BG ", "02-05": "🐿️TY ", "08-14": "🐧HK"
     }};
 
     function render(y, m) {{
@@ -131,7 +131,7 @@ html_code = f"""
             cell.innerHTML = 
                 '<div style="font-size:10px; padding:4px; color:{t['title']}; font-weight:bold;">' + String(i).padStart(2, '0') + '</div>' +
                 '<div style="padding: 0 4px;">' + anniHtml + '</div>' +
-                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:6px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box; font-family:inherit;">' + note + '</textarea>';
+                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:8px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box; font-family:inherit;">' + note + '</textarea>';
 
             cell.onclick = function() {{
                 selId = k;
