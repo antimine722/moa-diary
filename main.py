@@ -85,37 +85,48 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
 # --- 4. 頂部標題 ---
-st.title("✨ MOA Diary")
+# --- 4. 頂部標題 ---
+st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-# --- 5. 翻頁導航與年月顯示 (整合區塊) ---
-# 使用較集中的比例 [1, 2, 1] 確保在手機上不會散開
-nav_l, nav_m, nav_r = st.columns([1, 2, 1])
+# --- 5. 導航與圖片整合區 (修正翻頁按鈕消失的問題) ---
+# 建立一個 3 欄位，比例為 [1, 4, 1]
+col_left, col_mid, col_right = st.columns([1, 4, 1])
 
-with nav_l:
-    # 增加 use_container_width 讓按鈕在手機上更好點擊
-    if st.button("＜", key="prev_mo_nav", use_container_width=True):
+with col_left:
+    # 強制建立一個實體按鈕，確保手機點得到
+    if st.button("◀", key="nav_prev", use_container_width=True):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
 
-with nav_m:
-    # 將年月顯示放在中間欄位，並確保文字置中
+with col_mid:
+    # 中間放置裝飾圖片與年月
+    # 圖片區
+    img_cols = st.columns(6)
+    for idx, img_name in enumerate(t["imgs"]):
+        if os.path.exists(img_name):
+            img_cols[idx].image(Image.open(img_name), use_container_width=True)
+    
+    # 年月顯示
     st.markdown(f"""
-        <h2 style='text-align: center; margin: 0; padding-top: 5px; color: {t['title']};'>
+        <h2 style='text-align: center; margin-top: 10px; color: {t['title']};'>
             {st.session_state.curr_year} / {st.session_state.curr_month:02d}
         </h2>
     """, unsafe_allow_html=True)
 
-with nav_r:
-    if st.button("＞", key="next_mo_nav", use_container_width=True):
+with col_right:
+    # 右側翻頁實體按鈕
+    if st.button("▶", key="nav_next", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
 
+# --- 6. 標籤選擇區 (如果有需要可以保留) ---
+st.columns(4) # 這裡可以放你的 生咖/演唱會 等標籤按鈕
 # --- 6. 縮小圖裝飾 ---
 # 裝飾圖移到導航列下方，避免遮擋按鈕觸控區域
 img_cols = st.columns(6)
