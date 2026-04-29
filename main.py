@@ -3,7 +3,7 @@ import streamlit as st
 # --- 1. 頁面配置 ---
 st.set_page_config(page_title="MOA Diary", layout="wide")
 
-# --- 2. 主題顏色設定 (可以自行修改) ---
+# --- 2. 主題顏色與狀態 ---
 THEMES = {
     "grey": {"bg": "#F5F5F5", "title": "#708090"},
     "orange": {"bg": "#FFF5EE", "title": "#E9967A"},
@@ -12,77 +12,100 @@ THEMES = {
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
 
-st.title("✨ MOA Diary (Mobile Fix)")
-
-# --- 3. 核心 HTML/JS 代碼 ---
-# 這裡我們用 HTML 表格強制鎖定 7 欄，不受 Streamlit 框架影響
+# --- 3. 嵌入式 HTML/JS ---
+# 我們將導覽按鈕直接寫在 HTML 裡，解決手機版排版消失的問題
 html_code = f"""
-<div id="moa-app" style="background: {t['bg']}; padding: 10px; font-family: sans-serif; border-radius: 10px;">
-    <div style="display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding: 5px 0;">
-        <button onclick="addTag('★生咖')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★生咖</button>
-        <button onclick="addTag('★演唱會')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★演唱會</button>
-        <button onclick="addTag('★應援')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★應援</button>
-        <button onclick="addTag('★回歸')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★回歸</button>
+<div id="moa-app" style="background: {t['bg']}; padding: 10px; font-family: 'Microsoft JhengHei', sans-serif; border-radius: 10px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <button onclick="changeMonth(-1)" style="padding: 5px 15px; border-radius: 5px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-weight: bold;"> < </button>
+        <h2 id="currentDisplay" style="margin: 0; color: {t['title']}; font-size: 1.2rem;">2026 / 04</h2>
+        <button onclick="changeMonth(1)" style="padding: 5px 15px; border-radius: 5px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-weight: bold;"> > </button>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;">
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">M</div>
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">T</div>
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">W</div>
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">T</div>
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">F</div>
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">S</div>
-        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">S</div>
-"""
-
-# 自動生成 30 個格子 (以 2026/04 為例)
-for i in range(1, 31):
-    d_key = f"2026-04-{i:02d}"
-    html_code += f"""
-    <div id="cell-{d_key}" onclick="selectDay('{d_key}')" style="background: white; border: 1px solid #ddd; height: 80px; display: flex; flex-direction: column; border-radius: 4px;">
-        <div style="font-size: 10px; padding: 2px; border-bottom: 1px solid #eee; background: #fafafa;">{i:02d}</div>
-        <textarea id="input-{d_key}" oninput="saveData('{d_key}')" style="flex:1; border:none; outline:none; font-size:10px; padding:3px; resize:none; width:100%; box-sizing:border-box; background:transparent;"></textarea>
+    <div style="display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px;">
+        <button onclick="addTag('★生咖')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px;">★生咖</button>
+        <button onclick="addTag('★演唱會')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px;">★演唱會</button>
+        <button onclick="addTag('★應援')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px;">★應援</button>
+        <button onclick="addTag('★回歸')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px;">★回歸</button>
     </div>
-    """
 
-html_code += """
-    </div>
+    <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;">
+        </div>
 </div>
 
 <script>
+    let currentYear = 2026;
+    let currentMonth = 4;
     let selectedId = null;
 
-    // 從本地讀取資料
-    window.onload = function() {
-        for (let i = 1; i <= 30; i++) {
-            let key = `2026-04-${String(i).padStart(2, '0')}`;
-            let saved = localStorage.getItem(key);
-            if(saved) document.getElementById(`input-${key}`).value = saved;
-        }
-    };
+    function renderCalendar(year, month) {{
+        const grid = document.getElementById('calendar-grid');
+        const display = document.getElementById('currentDisplay');
+        display.innerText = `${{year}} / ${{String(month).padStart(2, '0')}}`;
+        
+        grid.innerHTML = '';
+        const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+        dayNames.forEach(name => {{
+            grid.innerHTML += `<div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold; padding-bottom:5px;">${{name}}</div>`;
+        }});
 
-    function selectDay(id) {
-        if(selectedId) {
-            document.getElementById(`cell-${selectedId}`).style.border = "1px solid #ddd";
-            document.getElementById(`cell-${selectedId}`).style.boxShadow = "none";
-        }
+        const firstDay = new Date(year, month - 1, 1).getDay();
+        const daysInMonth = new Date(year, month, 0).getDate();
+        
+        // 修正 Date.getDay() 的星期排版 (將週日 0 移至最後)
+        const offset = firstDay === 0 ? 6 : firstDay - 1;
+
+        for (let i = 0; i < offset; i++) grid.innerHTML += '<div></div>';
+
+        for (let i = 1; i <= daysInMonth; i++) {{
+            let dKey = `${{year}}-${{String(month).padStart(2, '0')}}-${{String(i).padStart(2, '0')}}`;
+            let savedNote = localStorage.getItem(dKey) || "";
+            
+            let cell = document.createElement('div');
+            cell.id = `cell-${{dKey}}`;
+            cell.onclick = () => selectDay(dKey);
+            cell.style = "background:white; border:1px solid #ddd; height:85px; display:flex; flex-direction:column; border-radius:4px; overflow:hidden;";
+            
+            cell.innerHTML = `
+                <div style="font-size:10px; padding:2px; background:#fafafa; border-bottom:1px solid #eee;">${{i}}</div>
+                <textarea id="input-${{dKey}}" oninput="saveData('${{dKey}}')" style="flex:1; border:none; outline:none; font-size:10px; padding:3px; resize:none; width:100%; box-sizing:border-box; background:transparent;">${{savedNote}}</textarea>
+            `;
+            grid.appendChild(cell);
+        }}
+    }}
+
+    function changeMonth(step) {{
+        currentMonth += step;
+        if (currentMonth > 12) {{ currentMonth = 1; currentYear++; }}
+        if (currentMonth < 1) {{ currentMonth = 12; currentYear--; }}
+        renderCalendar(currentYear, currentMonth);
+    }}
+
+    function selectDay(id) {{
+        if(selectedId) {{
+            let prevCell = document.getElementById(`cell-${{selectedId}}`);
+            if(prevCell) prevCell.style.border = "1px solid #ddd";
+        }}
         selectedId = id;
-        document.getElementById(`cell-${id}`).style.border = "2px solid gold";
-        document.getElementById(`cell-${id}`).style.boxShadow = "inset 0 0 5px rgba(255,215,0,0.5)";
-    }
+        document.getElementById(`cell-${{id}}`).style.border = "2px solid {t['title']}";
+    }}
 
-    function saveData(id) {
-        localStorage.setItem(id, document.getElementById(`input-${id}`).value);
-    }
+    function saveData(id) {{
+        localStorage.setItem(id, document.getElementById(`input-${{id}}`).value);
+    }}
 
-    function addTag(tag) {
-        if(!selectedId) { alert("請先點選一個格子！"); return; }
-        let el = document.getElementById(`input-${selectedId}`);
+    function addTag(tag) {{
+        if(!selectedId) {{ alert("請先點選一個格子！"); return; }}
+        let el = document.getElementById(`input-${{selectedId}}`);
         el.value = (el.value + " " + tag).trim();
         saveData(selectedId);
-    }
+    }}
+
+    // 初始化
+    renderCalendar(currentYear, currentMonth);
 </script>
 """
 
-# 使用 st.components 渲染，高度設為 800 確保手機看得到全貌
-st.components.v1.html(html_code, height=800, scrolling=True)
+# 渲染到畫面上
+st.components.v1.html(html_code, height=900, scrolling=True)
