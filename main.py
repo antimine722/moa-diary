@@ -131,7 +131,7 @@ html_code = f"""
             cell.innerHTML = 
                 '<div style="font-size:10px; padding:4px; color:{t['title']}; font-weight:bold;">' + String(i).padStart(2, '0') + '</div>' +
                 '<div style="padding: 0 4px;">' + anniHtml + '</div>' +
-                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:11px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box; font-family:inherit;">' + note + '</textarea>';
+                '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:9px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box; font-family:inherit;">' + note + '</textarea>';
 
             cell.onclick = function() {{
                 selId = k;
