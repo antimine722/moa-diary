@@ -16,11 +16,11 @@ SPECIAL_DAYS = {
 }
 
 THEMES = {
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "special_bg": "#FFDAB9", "imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg", "fox04.jpg", "fox05.jpg", "fox06.jpg"]},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "special_bg": "#B0C4DE", "imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg", "dog04.jpg", "dog05.jpg", "dog06.jpg"]},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "special_bg": "#FFC0CB", "imgs": ["bear01.jpg", "bear02.jpg", "bear03.jpg", "bear04.jpg", "bear05.jpg", "bear06.jpg"]},
-    "gray": {"bg": "#F5F5F5", "title": "#708090", "special_bg": "#D3D3D3", "imgs": ["cat01.jpg", "cat02.jpg", "cat03.jpg", "cat04.jpg", "cat05.jpg", "cat06.jpg"]},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "special_bg": "#E6E6FA", "imgs": ["ang01.jpg", "ang02.jpg", "ang03.jpg", "ang04.jpg", "ang05.jpg", "ang06.jpg"]}
+    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg", "fox04.jpg", "fox05.jpg", "fox06.jpg"]},
+    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg", "dog04.jpg", "dog05.jpg", "dog06.jpg"]},
+    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "imgs": ["bear01.jpg", "bear02.jpg", "bear03.jpg", "bear04.jpg", "bear05.jpg", "bear06.jpg"]},
+    "gray": {"bg": "#F5F5F5", "title": "#708090", "imgs": ["cat01.jpg", "cat02.jpg", "cat03.jpg", "cat04.jpg", "cat05.jpg", "cat06.jpg"]},
+    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "imgs": ["ang01.jpg", "ang02.jpg", "ang03.jpg", "ang04.jpg", "ang05.jpg", "ang06.jpg"]}
 }
 
 # --- 2. 狀態初始化 ---
@@ -46,41 +46,40 @@ st.markdown(f"""
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 讓一般日期與特殊日期的外框大小一致 */
+    /* 統一格子容器 */
     .date-container {{
-        min-height: 140px;
+        background-color: #FFFFFF;
+        border: 1px solid {t['title']};
+        border-radius: 5px;
+        padding: 5px;
+        min-height: 120px;
         margin-bottom: 10px;
     }}
     
-    /* 特殊日子的容器樣式 */
-    .special-box {{ 
-        background-color: {t['special_bg']}; 
-        border-radius: 8px; 
-        padding: 8px; 
-        border: 1.5px solid {t['title']};
-        text-align: center;
-        margin-bottom: 4px;
-    }}
-    
-    .special-text {{
-        color: {t['title']};
-        font-size: 0.85rem;
-        font-weight: bold;
-        margin: 0;
-        line-height: 1.2;
+    /* 日期標籤樣式 (包含特別日名稱) */
+    .stTextArea label {{
+        color: {t['title']} !important;
+        font-weight: bold !important;
+        font-size: 0.85rem !important;
+        white-space: pre-wrap !important; /* 讓特別日名稱可以換行顯示 */
+        line-height: 1.2 !important;
+        display: block !important;
+        margin-bottom: 5px !important;
     }}
 
-    /* 強制設定輸入框為白色底，並統一樣式 */
+    /* 輸入框主體：強制白色背景並統一高度 */
     .stTextArea textarea {{
         background-color: #FFFFFF !important;
+        border: none !important;
         color: #333333 !important;
-        border: 1.5px solid {t['title']} !important;
-        border-radius: 8px !important;
-        height: 80px !important;
+        height: 70px !important;
+        padding: 0px !important;
     }}
     
-    /* 隱藏輸入框的小標籤以節省空間 */
-    label {{ font-weight: bold; color: {t['title']}; }}
+    /* 移除 Focus 時的藍色外框，維持乾淨 */
+    .stTextArea textarea:focus {{
+        box-shadow: none !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -92,7 +91,7 @@ for idx, img_name in enumerate(t["imgs"]):
         cols[idx].image(Image.open(img_name), use_container_width=True)
 
 # --- 5. 月份導航 ---
-st.write("") # 留白
+st.write("")
 n1, n2, n3 = st.columns([1, 2, 1])
 with n1:
     if st.button("❮"):
@@ -115,7 +114,7 @@ with n3:
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
 week_head = st.columns(7)
 for i, d in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
-    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin-bottom:0;'><b>{d}</b></p>", unsafe_allow_html=True)
+    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']};'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     days = st.columns(7)
@@ -125,27 +124,20 @@ for week in cal:
             short_key = f"{st.session_state.curr_month:02d}-{day:02d}"
             
             with days[i]:
+                # 組合顯示標籤：日期 + 愛心 + 特別日名稱 (如果有)
+                label_text = f"{day:02d}"
+                if short_key in SPECIAL_DAYS:
+                    label_text = f"{day:02d} ❤️\n{SPECIAL_DAYS[short_key]}"
+                
+                # 整個格子包在容器裡
                 st.markdown('<div class="date-container">', unsafe_allow_html=True)
                 
-                # 如果是特殊日子
-                if short_key in SPECIAL_DAYS:
-                    st.markdown(f"""
-                        <div class="special-box">
-                            <p class="special-text">{day:02d} ❤️</p>
-                            <p class="special-text">{SPECIAL_DAYS[short_key]}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    display_label = "Edit" 
-                else:
-                    display_label = f"{day:02d}"
-
                 val = st.session_state.notes.get(date_key, "")
-                # 使用 label_visibility 讓一般日顯示數字，特殊日隱藏數字標籤
+                # 直接使用 text_area 的標籤功能來顯示日期和特別日
                 new_val = st.text_area(
-                    display_label, 
+                    label_text, 
                     value=val, 
-                    key=date_key, 
-                    label_visibility="visible" if short_key not in SPECIAL_DAYS else "collapsed"
+                    key=date_key
                 )
                 
                 if new_val != val:
