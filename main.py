@@ -5,7 +5,7 @@ import os
 from PIL import Image
 
 # 頁面配置
-st.set_page_config(page_title="MOA Diary Grid", layout="wide")
+st.set_page_config(page_title="MOA Diary", layout="wide")
 
 # --- 1. 核心資料 ---
 SPECIAL_DAYS = {
@@ -40,36 +40,44 @@ t = THEMES[theme_choice]
 st.markdown(f"""
     <style>
     .stApp {{ background-color: {t['bg']}; }}
-    h1, h2 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
+    h1 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 日期顯示列 */
+    /* 頂部導航按鈕樣式 */
+    .nav-btn div.stButton > button {{
+        background-color: white !important;
+        color: {t['title']} !important;
+        border: 1px solid {t['title']} !important;
+        border-radius: 20px !important;
+        font-weight: bold !important;
+    }}
+
+    /* 日期顯示列 (上方色塊) */
     .date-header {{
         background-color: {t['title']};
         color: white;
         font-weight: bold;
-        padding: 2px 8px;
-        border-radius: 4px 4px 0 0;
-        font-size: 0.9rem;
-        display: flex;
-        justify-content: space-between;
+        padding: 4px 10px;
+        border-radius: 8px 8px 0 0;
+        font-size: 1.1rem;
+        text-align: left;
     }}
     
-    /* 特別日子的日期列顏色 */
     .special-header {{
         background-color: #FF6B6B !important;
     }}
 
-    /* 輸入方框的樣式微調 */
+    /* 打字方框樣式 */
     div[data-baseweb="textarea"] {{
-        border: 1px solid {t['title']} !important;
-        border-top: none !important; /* 與上方日期列接合 */
-        border-radius: 0 0 4px 4px !important;
+        border: 2px solid {t['title']} !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
         background-color: white !important;
     }}
     
     textarea {{
-        font-size: 0.8rem !important;
-        padding: 5px !important;
+        font-size: 0.9rem !important;
+        padding: 8px !important;
+        color: #333 !important;
     }}
 
     /* 隱藏標籤空間 */
@@ -77,33 +85,44 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 標題與導航 ---
+# --- 4. 頂部裝飾與導航 ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-c1, c2 = st.columns(2)
-with c1:
-    if st.button("上個月", use_container_width=True):
+# 顯示月曆裝飾圖
+img_cols = st.columns(6)
+imgs = ["fox01.jpg", "fox02.jpg", "fox03.jpg", "fox04.jpg", "fox05.jpg", "fox06.jpg"] # 預設圖片清單
+for idx, img_name in enumerate(imgs):
+    if os.path.exists(img_name):
+        img_cols[idx].image(Image.open(img_name), use_container_width=True)
+
+# 翻頁導航 (只有按鈕，不顯示中間的年月日)
+st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
+nav_c1, nav_c2, nav_c3, nav_c4, nav_c5 = st.columns([1, 1, 2, 1, 1])
+with nav_c2:
+    if st.button("＜", use_container_width=True):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
-with c2:
-    if st.button("下個月", use_container_width=True):
+with nav_c3:
+    # 這裡只顯示大的月份標題
+    st.markdown(f"<h2 style='text-align:center; color:{t['title']}; margin:0;'>{st.session_state.curr_month:02d} 月</h2>", unsafe_allow_html=True)
+with nav_c4:
+    if st.button("＞", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
-
-st.markdown(f"<h2>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</h2>", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 5. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
-week_head = st.columns(7)
 week_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+week_head = st.columns(7)
 for i, d in enumerate(week_names):
-    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin:0; font-size:0.7rem;'><b>{d}</b></p>", unsafe_allow_html=True)
+    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin-bottom:5px;'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     cols = st.columns(7)
@@ -114,27 +133,19 @@ for week in cal:
             is_special = short_key in SPECIAL_DAYS
             
             with cols[i]:
-                # 1. 上方日期顯示列
+                # 1. 上方日期標題 (只顯示日期數字與愛心)
                 header_class = "date-header special-header" if is_special else "date-header"
-                heart = "❤️" if is_special else ""
-                st.markdown(f"""
-                    <div class="{header_class}">
-                        <span>{day:02d} {heart}</span>
-                    </div>
-                """, unsafe_allow_html=True)
+                heart = " ♡ " if is_special else ""
+                st.markdown(f'<div class="{header_class}">{day:02d}{heart}</div>', unsafe_allow_html=True)
                 
-                # 2. 下方打字方框
+                # 2. 下方直接打字區域 (已移除中間的年月日顯示)
                 current_text = st.session_state.notes.get(date_key, "")
                 new_text = st.text_area(
-                    label=date_key,
+                    label=date_key, # 標籤會被隱藏
                     value=current_text,
                     key=f"input-{date_key}",
-                    height=90
+                    height=100
                 )
-                
-                # 特別日子的備註文字 (顯示在方框最下面)
-                if is_special:
-                    st.markdown(f"<div style='font-size:0.6rem; color:#FF6B6B; text-align:center; margin-top:-5px;'>{SPECIAL_DAYS[short_key]}</div>", unsafe_allow_html=True)
                 
                 # 儲存邏輯
                 if new_text != current_text:
@@ -142,6 +153,6 @@ for week in cal:
                     with open("grid_notes.json", 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
 
-# 底部提醒
-st.markdown("---")
-st.caption("💡 提示：輸入完畢後點擊格子以外的地方即可自動儲存。")
+                # 特別日子名稱 (顯示在最下方)
+                if is_special:
+                    st.markdown(f"<p style='font-size:0.7rem; color:#FF6B6B; text-align:center; margin:0;'>{SPECIAL_DAYS[short_key]}</p>", unsafe_allow_html=True)
