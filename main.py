@@ -135,7 +135,7 @@ for week in cal:
             with cols[i]:
                 # 1. 上方日期標題 (只顯示日期數字與愛心)
                 header_class = "date-header special-header" if is_special else "date-header"
-                heart = " ♡ " if is_special else ""
+                heart = " ❤️" if is_special else ""
                 st.markdown(f'<div class="{header_class}">{day:02d}{heart}</div>', unsafe_allow_html=True)
                 
                 # 2. 下方直接打字區域 (已移除中間的年月日顯示)
