@@ -3,12 +3,15 @@ import streamlit as st
 # --- 1. 頁面配置 ---
 st.set_page_config(page_title="MOA Diary", layout="wide")
 
-# --- 2. 主題與月份狀態控制 ---
+# --- 2. 完整主題設定 ---
 THEMES = {
     "grey": {"bg": "#F5F5F5", "title": "#708090"},
     "orange": {"bg": "#FFF5EE", "title": "#E9967A"},
     "purple": {"bg": "#F8F4FF", "title": "#9370DB"},
+    "pink": {"bg": "#FFF0F5", "title": "#DB7093"},
+    "blue": {"bg": "#F0F8FF", "title": "#4682B4"}
 }
+
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
 
@@ -16,7 +19,7 @@ t = THEMES[theme_choice]
 if 'year' not in st.session_state: st.session_state.year = 2026
 if 'month' not in st.session_state: st.session_state.month = 4
 
-# --- 3. 簡單的翻頁按鈕 (Streamlit 原生) ---
+# --- 3. 頂部原生控制區 ---
 st.markdown(f"<h1 style='text-align: center; color: {t['title']};'>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([1, 2, 1])
@@ -39,8 +42,7 @@ with col3:
             st.session_state.year += 1
         st.rerun()
 
-# --- 4. 嵌入式 HTML/JS (鎖定 7 欄與標籤功能) ---
-# 將當前的年月份傳入 JS 進行渲染
+# --- 4. 嵌入式 HTML/JS (鎖定手機 7 欄排版) ---
 html_code = f"""
 <div id="moa-app" style="background: {t['bg']}; padding: 10px; font-family: sans-serif; border-radius: 10px;">
     
