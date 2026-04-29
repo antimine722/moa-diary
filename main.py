@@ -54,89 +54,67 @@ st.markdown(f"""
         position: relative;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
     }}
     
-    /* 特殊日底色 */
-    .special-cell {{
-        background-color: {t['special_bg']} !important;
-    }}
-    
-    .date-num {{
-        color: {t['title']};
-        font-weight: bold;
-        font-size: 1rem;
-    }}
-    
-    .special-label {{
-        color: {t['title']};
-        font-size: 0.75rem;
-        font-weight: bold;
-        margin-top: auto; /* 強制文字置底 */
-    }}
+    .special-cell {{ background-color: {t['special_bg']} !important; }}
+    .date-num {{ color: {t['title']}; font-weight: bold; font-size: 1rem; }}
+    .special-label {{ color: {t['title']}; font-size: 0.75rem; font-weight: bold; margin-top: auto; }}
+    .note-preview {{ color: #555; font-size: 0.7rem; line-height: 1.2; margin-top: 2px; }}
 
-    .note-preview {{
-        color: #555;
-        font-size: 0.7rem;
-        line-height: 1.2;
-        margin-top: 2px;
-        overflow: hidden;
-    }}
-    
     /* 隱形按鈕覆蓋格子 */
     div.stButton > button {{
-        width: 100%;
-        height: 110px;
-        background: transparent;
-        border: none;
-        color: transparent;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 10;
+        width: 100%; height: 110px; background: transparent; border: none; color: transparent;
+        position: absolute; top: 0; left: 0; z-index: 10;
     }}
-    div.stButton > button:hover {{ background: rgba(0,0,0,0.03); color: transparent; }}
+
+    /* 頂部導航按鈕樣式修正 */
+    .nav-btn-style button {{
+        background: transparent !important;
+        border: none !important;
+        color: {t['title']} !important;
+        font-size: 30px !important;
+        line-height: 1 !important;
+        padding-top: 10px !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部導航列 (包含縮小圖片與翻頁) ---
-st.title("✨ MOA Diary")
+# --- 4. 頂部標題與翻頁 (< MOA Diary >) ---
+header_cols = st.columns([1, 4, 1])
 
-# 建立導航布局：[左箭頭, 左圖組, 年月標題, 右圖組, 右箭頭]
-nav_cols = st.columns([0.5, 1.5, 2, 1.5, 0.5])
-
-with nav_cols[0]:
-    if st.button("❮", key="nav_prev"):
+with header_cols[0]:
+    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
+    if st.button("<", key="nav_l"):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with nav_cols[1]:
-    img_sub = st.columns(3)
-    for i in range(3):
-        if os.path.exists(t["imgs"][i]):
-            img_sub[i].image(Image.open(t["imgs"][i]), width=35)
+with header_cols[1]:
+    st.title("✨ MOA Diary")
 
-with nav_cols[2]:
-    st.subheader(f"{st.session_state.curr_year} / {st.session_state.curr_month:02d}")
-
-with nav_cols[3]:
-    img_sub_r = st.columns(3)
-    for i in range(3, 6):
-        if os.path.exists(t["imgs"][i]):
-            img_sub_r[i-3].image(Image.open(t["imgs"][i]), width=35)
-
-with nav_cols[4]:
-    if st.button("❯", key="nav_next"):
+with header_cols[2]:
+    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
+    if st.button(">", key="nav_r"):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 5. 月曆主體 ---
+# --- 5. 縮小圖裝飾 ---
+img_cols = st.columns(6)
+for idx, img_name in enumerate(t["imgs"]):
+    if os.path.exists(img_name):
+        img_cols[idx].image(Image.open(img_name), width=45)
+
+# --- 6. 年月顯示 ---
+st.subheader(f"{st.session_state.curr_year} / {st.session_state.curr_month:02d}")
+
+# --- 7. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
 week_head = st.columns(7)
 for i, d in enumerate(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]):
@@ -152,12 +130,9 @@ for week in cal:
             note = st.session_state.notes.get(date_key, "")
             
             with days[i]:
-                # 繪製 HTML 格子
                 special_class = "special-cell" if is_special else ""
                 heart = " ❤️" if is_special else ""
                 special_text = f'<div class="special-label">{SPECIAL_DAYS[short_key]}</div>' if is_special else ""
-                
-                # 顯示預覽文字（截斷過長內容）
                 preview = (note[:15] + '...') if len(note) > 15 else note
 
                 st.markdown(f"""
@@ -168,19 +143,18 @@ for week in cal:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # 透明按鈕觸發編輯
                 if st.button("", key=f"btn-{date_key}"):
                     st.session_state.editing_date = date_key
 
-# --- 6. 編輯彈窗 ---
+# --- 8. 編輯視窗 ---
 if st.session_state.editing_date:
     st.markdown("---")
-    with st.expander(f"📝 編輯 {st.session_state.editing_date} 的日記", expanded=True):
+    with st.expander(f"📝 編輯 {st.session_state.editing_date}", expanded=True):
         current_note = st.session_state.notes.get(st.session_state.editing_date, "")
         new_note = st.text_area("內容：", value=current_note, height=100)
         
         c1, c2 = st.columns(2)
-        if c1.button("儲存修改"):
+        if c1.button("儲存"):
             st.session_state.notes[st.session_state.editing_date] = new_note
             with open("grid_notes.json", 'w', encoding='utf-8') as f:
                 json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
