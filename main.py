@@ -14,13 +14,13 @@ SPECIAL_DAYS = {
 }
 QUICK_TAGS = ["生咖", "演唱會", "應援活動", "回歸"]
 
-# 新增了 grey 主題
+# 包含灰色主題
 THEMES = {
-    "grey": {"bg": "#F5F5F5", "title": "#708090", "special": "#A9A9A9", "btn_text": "white"},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "special": "#B399D4", "btn_text": "white"},
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "special": "#FF6B6B", "btn_text": "white"},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "special": "#5CACEE", "btn_text": "white"},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "special": "#FF69B4", "btn_text": "white"}
+    "grey": {"bg": "#F5F5F5", "title": "#708090", "special": "#A9A9A9"},
+    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "special": "#B399D4"},
+    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "special": "#FF6B6B"},
+    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "special": "#5CACEE"},
+    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "special": "#FF69B4"}
 }
 
 # --- 2. 狀態初始化 ---
@@ -54,7 +54,7 @@ st.markdown(f"""
         color: {t['title']} !important;
     }}
     
-    /* 選中後的按鈕樣式 (Primary) */
+    /* 選中後的按鈕樣式 */
     .stButton > button[kind="primary"] {{
         background-color: {t['title']} !important;
         color: white !important;
@@ -68,11 +68,10 @@ st.markdown(f"""
         border-radius: 0 0 8px 8px !important;
         background-color: white !important;
     }}
-    textarea {{ color: #333 !important; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 圖片顯示 (灰色主題預設使用 wolf 或 grey 相關圖片，若無則用 fox) ---
+# --- 4. 圖片顯示 ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 img_cols = st.columns(6)
 prefix = {"purple": "ang", "orange": "fox", "blue": "dog", "pink": "bear", "grey": "wolf"}.get(theme_choice, "fox")
@@ -83,17 +82,17 @@ for idx in range(1, 7):
 
 # --- 5. 導航與標籤 ---
 c1, c2, c3, c4, c5 = st.columns([1, 1, 3, 1, 1])
-with nav_c2 := c2: 
-    if st.button("<", key="p"): 
+with c2: 
+    if st.button("<", key="prev_btn"): 
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
-with nav_c3 := c3: 
+with c3: 
     st.markdown(f"<h2 style='text-align:center; color:{t['title']}; margin:0;'>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</h2>", unsafe_allow_html=True)
-with nav_c4 := c4: 
-    if st.button(">", key="n"): 
+with c4: 
+    if st.button(">", key="next_btn"): 
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
@@ -104,13 +103,13 @@ with nav_c4 := c4:
 st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
 tag_cols = st.columns(len(QUICK_TAGS))
 for idx, tag in enumerate(QUICK_TAGS):
-    if tag_cols[idx].button(f"★{tag}", key=f"t-{tag}", use_container_width=True):
+    if tag_cols[idx].button(f"★{tag}", key=f"tag_btn_{tag}", use_container_width=True):
         if st.session_state.sel_date:
             d = st.session_state.sel_date
             old_val = st.session_state.notes.get(d, "")
             new_val = f"{old_val} ★{tag} ".strip()
             
-            # 同步更新所有位置
+            # 同步更新
             st.session_state.notes[d] = new_val
             st.session_state[f"txt-{d}"] = new_val
             
@@ -137,13 +136,13 @@ for week in cal:
             is_sel = st.session_state.sel_date == d_key
             
             with cols[i]:
-                # 日期按鈕 (點擊切換選中狀態)
+                # 日期按鈕標頭
                 label = f"{day:02d}{'❤️' if is_spec else ''}"
                 if st.button(label, key=f"btn-{d_key}", type="primary" if is_sel else "secondary"):
                     st.session_state.sel_date = d_key
                     st.rerun()
                 
-                # 文字輸入區
+                # 文字輸入框
                 txt_val = st.text_area(
                     label=d_key, 
                     value=st.session_state.notes.get(d_key, ""), 
@@ -152,7 +151,7 @@ for week in cal:
                     label_visibility="collapsed"
                 )
                 
-                # 偵測手打輸入並存檔
+                # 手動編輯存檔
                 if txt_val != st.session_state.notes.get(d_key, ""):
                     st.session_state.notes[d_key] = txt_val
                     with open("grid_notes.json", 'w', encoding='utf-8') as f:
