@@ -44,7 +44,23 @@ st.markdown(f"""
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 格子基本樣式 */
+    /* 頂部導航按鈕樣式 */
+    .nav-container {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }}
+    .nav-btn button {{
+        background: transparent !important;
+        border: none !important;
+        color: {t['title']} !important;
+        font-size: 35px !important;
+        font-weight: bold !important;
+        cursor: pointer;
+        padding: 0 15px !important;
+    }}
+
+    /* 月曆格子樣式 */
     .calendar-cell {{
         background-color: #FFFFFF;
         border: 1px solid {t['title']};
@@ -55,7 +71,6 @@ st.markdown(f"""
         display: flex;
         flex-direction: column;
     }}
-    
     .special-cell {{ background-color: {t['special_bg']} !important; }}
     .date-num {{ color: {t['title']}; font-weight: bold; font-size: 1rem; }}
     .special-label {{ color: {t['title']}; font-size: 0.75rem; font-weight: bold; margin-top: auto; }}
@@ -66,27 +81,16 @@ st.markdown(f"""
         width: 100%; height: 110px; background: transparent; border: none; color: transparent;
         position: absolute; top: 0; left: 0; z-index: 10;
     }}
-
-    /* 頂部導航按鈕樣式 */
-    .nav-btn-style button {{
-        background: transparent !important;
-        border: none !important;
-        color: {t['title']} !important;
-        font-size: 32px !important;
-        line-height: 1 !important;
-        padding-top: 15px !important;
-        width: 100% !important;
-    }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部標題與翻頁 (< MOA Diary >) ---
-# 使用 columns 讓按鈕緊貼標題兩側
-header_cols = st.columns([1, 3, 1])
+# --- 4. 頂部標題與左右翻頁 ---
+# 使用 columns 布局，將 < 和 > 放在標題兩側
+head_l, head_main, head_r = st.columns([1, 4, 1])
 
-with header_cols[0]:
-    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
-    if st.button("<", key="nav_l"):
+with head_l:
+    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
+    if st.button("<", key="prev_mo"):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
@@ -94,12 +98,12 @@ with header_cols[0]:
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-with header_cols[1]:
+with head_main:
     st.title("✨ MOA Diary")
 
-with header_cols[2]:
-    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
-    if st.button(">", key="nav_r"):
+with head_r:
+    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
+    if st.button(">", key="next_mo"):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
@@ -145,6 +149,7 @@ for week in cal:
                     </div>
                 """, unsafe_allow_html=True)
                 
+                # 格子點擊按鈕
                 if st.button("", key=f"btn-{date_key}"):
                     st.session_state.editing_date = date_key
 
