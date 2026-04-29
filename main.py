@@ -95,17 +95,30 @@ with header_cols[0]:
     st.markdown('</div>', unsafe_allow_html=True)
 
 with header_cols[1]:
-    st.title("✨ MOA Diary")
+# --- 4. 頂部標題 ---
+st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-with header_cols[2]:
-    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
-    if st.button(">", key="nav_r"):
+# --- 5. 翻頁導航按鈕 (具備實體方框) ---
+# 使用兩欄布局，讓兩個按鈕方框並排
+nav_btn_cols = st.columns(2)
+
+with nav_btn_cols[0]:
+    # 建立一個寫著 "Last Month" 的實體按鈕方框
+    if st.button("Last Month", key="btn_last", use_container_width=True):
+        st.session_state.curr_month -= 1
+        if st.session_state.curr_month == 0:
+            st.session_state.curr_month = 12
+            st.session_state.curr_year -= 1
+        st.rerun()
+
+with nav_btn_cols[1]:
+    # 建立一個寫著 "Next Month" 的實體按鈕方框
+    if st.button("Next Month", key="btn_next", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 5. 縮小圖裝飾 ---
 img_cols = st.columns(6)
