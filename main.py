@@ -45,26 +45,42 @@ st.markdown(f"""
     <style>
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
-    /* 特別日子的容器樣式 */
+    
+    /* 讓一般日期與特殊日期的外框大小一致 */
+    .date-container {{
+        min-height: 140px;
+        margin-bottom: 10px;
+    }}
+    
+    /* 特殊日子的容器樣式 */
     .special-box {{ 
         background-color: {t['special_bg']}; 
-        border-radius: 10px; 
-        padding: 5px; 
-        border: 1px solid {t['title']};
-        margin-bottom: 5px;
+        border-radius: 8px; 
+        padding: 8px; 
+        border: 1.5px solid {t['title']};
+        text-align: center;
+        margin-bottom: 4px;
     }}
+    
     .special-text {{
         color: {t['title']};
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: bold;
-        text-align: center;
         margin: 0;
+        line-height: 1.2;
     }}
-    /* 輸入框透明化以顯示背景 */
+
+    /* 強制設定輸入框為白色底，並統一樣式 */
     .stTextArea textarea {{
-        background-color: rgba(255, 255, 255, 0.5);
-        border: 1px solid {t['title']};
+        background-color: #FFFFFF !important;
+        color: #333333 !important;
+        border: 1.5px solid {t['title']} !important;
+        border-radius: 8px !important;
+        height: 80px !important;
     }}
+    
+    /* 隱藏輸入框的小標籤以節省空間 */
+    label {{ font-weight: bold; color: {t['title']}; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -76,6 +92,7 @@ for idx, img_name in enumerate(t["imgs"]):
         cols[idx].image(Image.open(img_name), use_container_width=True)
 
 # --- 5. 月份導航 ---
+st.write("") # 留白
 n1, n2, n3 = st.columns([1, 2, 1])
 with n1:
     if st.button("❮"):
@@ -98,7 +115,7 @@ with n3:
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
 week_head = st.columns(7)
 for i, d in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
-    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']};'><b>{d}</b></p>", unsafe_allow_html=True)
+    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin-bottom:0;'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     days = st.columns(7)
@@ -108,7 +125,9 @@ for week in cal:
             short_key = f"{st.session_state.curr_month:02d}-{day:02d}"
             
             with days[i]:
-                # 如果是特殊日子，顯示底色和文字
+                st.markdown('<div class="date-container">', unsafe_allow_html=True)
+                
+                # 如果是特殊日子
                 if short_key in SPECIAL_DAYS:
                     st.markdown(f"""
                         <div class="special-box">
@@ -116,14 +135,22 @@ for week in cal:
                             <p class="special-text">{SPECIAL_DAYS[short_key]}</p>
                         </div>
                     """, unsafe_allow_html=True)
-                    label = "Note" # 縮短標籤避免佔空間
+                    display_label = "Edit" 
                 else:
-                    label = f"{day:02d}"
+                    display_label = f"{day:02d}"
 
                 val = st.session_state.notes.get(date_key, "")
-                new_val = st.text_area(label, value=val, key=date_key, height=80, label_visibility="collapsed" if short_key in SPECIAL_DAYS else "visible")
+                # 使用 label_visibility 讓一般日顯示數字，特殊日隱藏數字標籤
+                new_val = st.text_area(
+                    display_label, 
+                    value=val, 
+                    key=date_key, 
+                    label_visibility="visible" if short_key not in SPECIAL_DAYS else "collapsed"
+                )
                 
                 if new_val != val:
                     st.session_state.notes[date_key] = new_val
                     with open("grid_notes.json", 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
