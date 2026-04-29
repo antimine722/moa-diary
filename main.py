@@ -1,156 +1,88 @@
 import streamlit as st
-import calendar
-import json
-import os
-from PIL import Image
 
-# --- 1. 配置與核心資料 ---
+# --- 1. 頁面配置 ---
 st.set_page_config(page_title="MOA Diary", layout="wide")
 
-SPECIAL_DAYS = {
-    "03-04": "Debut Day", "08-22": "MOA Day", "09-13": "YEONJUN Day",
-    "12-05": "SOOBIN Day", "03-13": "BEOMGYU Day", "02-05": "TAEHYUN Day",
-    "08-14": "HUENINGKAI Day"
-}
-QUICK_TAGS = ["生咖", "演唱會", "應援活動", "回歸"]
-
+# --- 2. 主題顏色設定 (可以自行修改) ---
 THEMES = {
-    "grey": {"bg": "#F5F5F5", "title": "#708090", "special": "#A9A9A9"},
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "special": "#FF6B6B"},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "special": "#B399D4"},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "special": "#5CACEE"},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "special": "#FF69B4"}
+    "grey": {"bg": "#F5F5F5", "title": "#708090"},
+    "orange": {"bg": "#FFF5EE", "title": "#E9967A"},
+    "purple": {"bg": "#F8F4FF", "title": "#9370DB"},
 }
-
-# --- 2. 狀態初始化 ---
-if 'notes' not in st.session_state:
-    if os.path.exists("grid_notes.json"):
-        with open("grid_notes.json", 'r', encoding='utf-8') as f:
-            st.session_state.notes = json.load(f)
-    else: st.session_state.notes = {}
-
-if 'curr_year' not in st.session_state: st.session_state.curr_year = 2026
-if 'curr_month' not in st.session_state: st.session_state.curr_month = 4
-if 'sel_date' not in st.session_state: st.session_state.sel_date = None
-
-# --- 3. 極限手機排版 CSS ---
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
 
-st.markdown(f"""
-    <style>
-    /* 全域背景 */
-    .stApp {{ background-color: {t['bg']}; }}
-    
-    /* [核心] 強制 7 欄橫向排列，不允許換行 */
-    [data-testid="stHorizontalBlock"] {{
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: flex-start !important;
-        gap: 2px !important;
-    }}
-    
-    [data-testid="column"] {{
-        flex: 1 1 0% !important;
-        min-width: 0 !important;
-    }}
+st.title("✨ MOA Diary (Mobile Fix)")
 
-    /* 日期標題小按鈕 */
-    .stButton > button {{
-        width: 100% !important;
-        padding: 0px !important;
-        font-size: 10px !important;
-        height: 22px !important;
-        min-height: 22px !important;
-        border-radius: 4px 4px 0 0 !important;
-        border: 1px solid {t['title']} !important;
-    }}
-    
-    /* 選中日期的高亮 */
-    .stButton > button[kind="primary"] {{
-        background-color: {t['title']} !important;
-        color: white !important;
-    }}
+# --- 3. 核心 HTML/JS 代碼 ---
+# 這裡我們用 HTML 表格強制鎖定 7 欄，不受 Streamlit 框架影響
+html_code = f"""
+<div id="moa-app" style="background: {t['bg']}; padding: 10px; font-family: sans-serif; border-radius: 10px;">
+    <div style="display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding: 5px 0;">
+        <button onclick="addTag('★生咖')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★生咖</button>
+        <button onclick="addTag('★演唱會')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★演唱會</button>
+        <button onclick="addTag('★應援')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★應援</button>
+        <button onclick="addTag('★回歸')" style="padding: 5px 10px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; white-space: nowrap;">★回歸</button>
+    </div>
 
-    /* 輸入框針對手機尺寸微調 */
-    div[data-baseweb="textarea"] {{
-        border: 1px solid {t['title']} !important;
-        border-top: none !important;
-        border-radius: 0 0 4px 4px !important;
-        background-color: white !important;
-    }}
-    
-    textarea {{
-        font-size: 10px !important;
-        line-height: 1.2 !important;
-        padding: 4px !important;
-    }}
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;">
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">M</div>
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">T</div>
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">W</div>
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">T</div>
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">F</div>
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">S</div>
+        <div style="text-align:center; font-size:10px; color:{t['title']}; font-weight:bold;">S</div>
+"""
 
-    /* 隱藏所有多餘元件標籤 */
-    div[data-testid="stWidgetLabel"] {{ display: none !important; }}
-    
-    /* 調整標籤按鈕區的高度 */
-    .tag-container .stButton > button {{
-        height: 30px !important;
-        font-size: 12px !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
+# 自動生成 30 個格子 (以 2026/04 為例)
+for i in range(1, 31):
+    d_key = f"2026-04-{i:02d}"
+    html_code += f"""
+    <div id="cell-{d_key}" onclick="selectDay('{d_key}')" style="background: white; border: 1px solid #ddd; height: 80px; display: flex; flex-direction: column; border-radius: 4px;">
+        <div style="font-size: 10px; padding: 2px; border-bottom: 1px solid #eee; background: #fafafa;">{i:02d}</div>
+        <textarea id="input-{d_key}" oninput="saveData('{d_key}')" style="flex:1; border:none; outline:none; font-size:10px; padding:3px; resize:none; width:100%; box-sizing:border-box; background:transparent;"></textarea>
+    </div>
+    """
 
-# --- 4. 頂部導航與標籤 ---
-st.markdown(f"<h2 style='text-align:center; color:{t['title']}; font-size:1.5rem; margin-bottom:10px;'>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</h2>", unsafe_allow_html=True)
+html_code += """
+    </div>
+</div>
 
-# 標籤按鈕 (維持橫排)
-tag_cols = st.columns(len(QUICK_TAGS))
-for idx, tag in enumerate(QUICK_TAGS):
-    if tag_cols[idx].button(f"★{tag}", key=f"t-{tag}"):
-        if st.session_state.sel_date:
-            d = st.session_state.sel_date
-            st.session_state.notes[d] = f"{st.session_state.notes.get(d, '')} ★{tag} ".strip()
-            # 更新對應的輸入框內容
-            st.session_state[f"txt-{d}"] = st.session_state.notes[d]
-            with open("grid_notes.json", 'w', encoding='utf-8') as f:
-                json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
-            st.rerun()
+<script>
+    let selectedId = null;
 
-# --- 5. 月曆主體 ---
-week_names = ["M", "T", "W", "T", "F", "S", "S"]
-h_cols = st.columns(7)
-for i, name in enumerate(week_names):
-    h_cols[i].markdown(f"<p style='text-align:center; color:{t['title']}; font-size:10px; margin:0;'><b>{name}</b></p>", unsafe_allow_html=True)
+    // 從本地讀取資料
+    window.onload = function() {
+        for (let i = 1; i <= 30; i++) {
+            let key = `2026-04-${String(i).padStart(2, '0')}`;
+            let saved = localStorage.getItem(key);
+            if(saved) document.getElementById(`input-${key}`).value = saved;
+        }
+    };
 
-cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
-for week in cal:
-    cols = st.columns(7)
-    for i, day in enumerate(week):
-        if day != 0:
-            d_key = f"{st.session_state.curr_year}-{st.session_state.curr_month:02d}-{day:02d}"
-            s_key = f"{st.session_state.curr_month:02d}-{day:02d}"
-            is_spec = s_key in SPECIAL_DAYS
-            is_sel = st.session_state.sel_date == d_key
-            
-            with cols[i]:
-                # 1. 日期標頭 (點擊即可選中該日，以便使用上方標籤)
-                btn_label = f"{day:02d}{'❤️' if is_spec else ''}"
-                if st.button(btn_label, key=f"btn-{d_key}", type="primary" if is_sel else "secondary"):
-                    st.session_state.sel_date = d_key
-                    st.rerun()
-                
-                # 2. 直接輸入格 (關鍵)
-                content = st.text_area(
-                    label=d_key,
-                    value=st.session_state.notes.get(d_key, ""),
-                    key=f"txt-{d_key}",
-                    height=75,
-                    label_visibility="collapsed"
-                )
-                
-                # 自動存檔：當輸入框內容與紀錄不同時觸發
-                if content != st.session_state.notes.get(d_key, ""):
-                    st.session_state.notes[d_key] = content
-                    with open("grid_notes.json", 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
-        else:
-            # 空白格也佔據空間以維持排版
-            cols[i].markdown("<div style='height:100px;'></div>", unsafe_allow_html=True)
+    function selectDay(id) {
+        if(selectedId) {
+            document.getElementById(`cell-${selectedId}`).style.border = "1px solid #ddd";
+            document.getElementById(`cell-${selectedId}`).style.boxShadow = "none";
+        }
+        selectedId = id;
+        document.getElementById(`cell-${id}`).style.border = "2px solid gold";
+        document.getElementById(`cell-${id}`).style.boxShadow = "inset 0 0 5px rgba(255,215,0,0.5)";
+    }
+
+    function saveData(id) {
+        localStorage.setItem(id, document.getElementById(`input-${id}`).value);
+    }
+
+    function addTag(tag) {
+        if(!selectedId) { alert("請先點選一個格子！"); return; }
+        let el = document.getElementById(`input-${selectedId}`);
+        el.value = (el.value + " " + tag).trim();
+        saveData(selectedId);
+    }
+</script>
+"""
+
+# 使用 st.components 渲染，高度設為 800 確保手機看得到全貌
+st.components.v1.html(html_code, height=800, scrolling=True)
