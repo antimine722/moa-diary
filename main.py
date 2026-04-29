@@ -6,7 +6,7 @@ import os
 from PIL import Image
 
 # 頁面配置
-st.set_page_config(page_title="MOA Diary", layout="wide")
+st.set_page_config(page_title="MOA Diary Mobile", layout="wide")
 
 # --- 1. 核心資料 ---
 SPECIAL_DAYS = {
@@ -32,8 +32,9 @@ if 'notes' not in st.session_state:
 
 if 'curr_year' not in st.session_state: st.session_state.curr_year = 2026
 if 'curr_month' not in st.session_state: st.session_state.curr_month = 4
+if 'editing_date' not in st.session_state: st.session_state.editing_date = None
 
-# --- 3. UI 樣式 (強制修正格子) ---
+# --- 3. UI 樣式 ---
 st.sidebar.title("設定")
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
@@ -43,101 +44,103 @@ st.markdown(f"""
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 容器：強制設定高度並允許內容重疊 */
-    .day-wrapper {{
-        position: relative;
+    /* 格子基本樣式 */
+    .calendar-cell {{
         background-color: #FFFFFF;
         border: 1px solid {t['title']};
         border-radius: 4px;
-        height: 140px;
-        margin-bottom: 10px;
-        padding: 5px;
-        overflow: hidden;
+        min-height: 110px;
+        padding: 6px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }}
-    .special-wrapper {{ background-color: {t['special_bg']} !important; }}
-
-    /* 日期數字與愛心 */
-    .date-header {{
+    
+    /* 特殊日底色 */
+    .special-cell {{
+        background-color: {t['special_bg']} !important;
+    }}
+    
+    .date-num {{
         color: {t['title']};
         font-weight: bold;
         font-size: 1rem;
-        z-index: 1;
     }}
-
-    /* 輸入框：完全透明且覆蓋整個格子 */
-    .stTextArea textarea {{
-        background-color: transparent !important;
-        border: none !important;
-        color: #444 !important;
-        height: 90px !important;
-        font-size: 0.85rem !important;
-        padding: 0 !important;
-        z-index: 2;
-    }}
-    .stTextArea label {{ display: none !important; }}
     
-    /* 特殊日文字：固定在底部 */
-    .special-label-bottom {{
-        position: absolute;
-        bottom: 5px;
-        left: 5px;
+    .special-label {{
         color: {t['title']};
         font-size: 0.75rem;
         font-weight: bold;
-        pointer-events: none; /* 防止擋住輸入點擊 */
+        margin-top: auto; /* 強制文字置底 */
+    }}
+
+    .note-preview {{
+        color: #555;
+        font-size: 0.7rem;
+        line-height: 1.2;
+        margin-top: 2px;
+        overflow: hidden;
     }}
     
-    /* 導航按鈕樣式 */
-    .nav-btn button {{
-        background-color: transparent !important;
-        border: none !important;
-        color: {t['title']} !important;
-        font-size: 24px !important;
-        font-weight: bold !important;
+    /* 隱形按鈕覆蓋格子 */
+    div.stButton > button {{
+        width: 100%;
+        height: 110px;
+        background: transparent;
+        border: none;
+        color: transparent;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
     }}
+    div.stButton > button:hover {{ background: rgba(0,0,0,0.03); color: transparent; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部導航 (左右翻頁 + 縮小圖) ---
+# --- 4. 頂部導航列 (包含縮小圖片與翻頁) ---
 st.title("✨ MOA Diary")
 
-n_col = st.columns([1, 2, 3, 2, 1])
+# 建立導航布局：[左箭頭, 左圖組, 年月標題, 右圖組, 右箭頭]
+nav_cols = st.columns([0.5, 1.5, 2, 1.5, 0.5])
 
-with n_col[0]:
-    if st.button("❮", key="prev_btn"):
+with nav_cols[0]:
+    if st.button("❮", key="nav_prev"):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
 
-with n_col[1]:
-    sub = st.columns(3)
+with nav_cols[1]:
+    img_sub = st.columns(3)
     for i in range(3):
-        if os.path.exists(t["imgs"][i]): sub[i].image(Image.open(t["imgs"][i]), width=35)
+        if os.path.exists(t["imgs"][i]):
+            img_sub[i].image(Image.open(t["imgs"][i]), width=35)
 
-with n_col[2]:
+with nav_cols[2]:
     st.subheader(f"{st.session_state.curr_year} / {st.session_state.curr_month:02d}")
 
-with n_col[3]:
-    sub_r = st.columns(3)
+with nav_cols[3]:
+    img_sub_r = st.columns(3)
     for i in range(3, 6):
-        if os.path.exists(t["imgs"][i]): sub_r[i-3].image(Image.open(t["imgs"][i]), width=35)
+        if os.path.exists(t["imgs"][i]):
+            img_sub_r[i-3].image(Image.open(t["imgs"][i]), width=35)
 
-with n_col[4]:
-    if st.button("❯", key="next_btn"):
+with nav_cols[4]:
+    if st.button("❯", key="nav_next"):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
 
-# --- 5. 月曆網格 ---
+# --- 5. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
-week_days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-cols_head = st.columns(7)
-for i, d in enumerate(week_days):
-    cols_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; font-weight:bold; font-size:0.7rem;'>{d}</p>", unsafe_allow_html=True)
+week_head = st.columns(7)
+for i, d in enumerate(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]):
+    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; font-size:0.75rem; margin:0;'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     days = st.columns(7)
@@ -146,25 +149,43 @@ for week in cal:
             date_key = f"{st.session_state.curr_year}-{st.session_state.curr_month:02d}-{day:02d}"
             short_key = f"{st.session_state.curr_month:02d}-{day:02d}"
             is_special = short_key in SPECIAL_DAYS
+            note = st.session_state.notes.get(date_key, "")
             
             with days[i]:
-                # 組合 HTML 結構
-                sp_class = "special-wrapper" if is_special else ""
+                # 繪製 HTML 格子
+                special_class = "special-cell" if is_special else ""
                 heart = " ❤️" if is_special else ""
+                special_text = f'<div class="special-label">{SPECIAL_DAYS[short_key]}</div>' if is_special else ""
                 
-                st.markdown(f'<div class="day-wrapper {sp_class}"><div class="date-header">{day:02d}{heart}</div>', unsafe_allow_html=True)
+                # 顯示預覽文字（截斷過長內容）
+                preview = (note[:15] + '...') if len(note) > 15 else note
+
+                st.markdown(f"""
+                    <div class="calendar-cell {special_class}">
+                        <div class="date-num">{day:02d}{heart}</div>
+                        <div class="note-preview">{preview}</div>
+                        {special_text}
+                    </div>
+                """, unsafe_allow_html=True)
                 
-                # 直接打字的輸入框
-                val = st.session_state.notes.get(date_key, "")
-                new_val = st.text_area("", value=val, key=f"txt-{date_key}")
-                
-                if new_val != val:
-                    st.session_state.notes[date_key] = new_val
-                    with open("grid_notes.json", 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
-                
-                # 特殊日文字放在最下面
-                if is_special:
-                    st.markdown(f'<div class="special-label-bottom">{SPECIAL_DAYS[short_key]}</div>', unsafe_allow_html=True)
-                
-                st.markdown('</div>', unsafe_allow_html=True)
+                # 透明按鈕觸發編輯
+                if st.button("", key=f"btn-{date_key}"):
+                    st.session_state.editing_date = date_key
+
+# --- 6. 編輯彈窗 ---
+if st.session_state.editing_date:
+    st.markdown("---")
+    with st.expander(f"📝 編輯 {st.session_state.editing_date} 的日記", expanded=True):
+        current_note = st.session_state.notes.get(st.session_state.editing_date, "")
+        new_note = st.text_area("內容：", value=current_note, height=100)
+        
+        c1, c2 = st.columns(2)
+        if c1.button("儲存修改"):
+            st.session_state.notes[st.session_state.editing_date] = new_note
+            with open("grid_notes.json", 'w', encoding='utf-8') as f:
+                json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
+            st.session_state.editing_date = None
+            st.rerun()
+        if c2.button("取消"):
+            st.session_state.editing_date = None
+            st.rerun()
