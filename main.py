@@ -45,12 +45,6 @@ st.markdown(f"""
     h1 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     div[data-testid="stWidgetLabel"] {{ display: none !important; }}
     
-    /* 導航按鈕 */
-    .stButton > button {{
-        border-radius: 10px !important;
-    }}
-
-    /* 日期標題 */
     .date-header {{
         background-color: {t['title']};
         color: white;
@@ -60,24 +54,31 @@ st.markdown(f"""
         font-size: 0.9rem;
     }}
     .special-header {{ background-color: #FF6B6B !important; }}
-    
-    /* 選中格子的框線 */
-    .active-border {{ border: 2px solid gold !important; }}
+    .active-border {{ border: 3px solid gold !important; border-bottom: none !important; }}
 
-    /* 打字方框 */
     div[data-baseweb="textarea"] {{
         border: 2px solid {t['title']} !important;
         border-top: none !important;
         border-radius: 0 0 8px 8px !important;
         background-color: white !important;
     }}
+    /* 選中時的輸入框加強視覺 */
+    .active-input div[data-baseweb="textarea"] {{ border: 3px solid gold !important; border-top: none !important; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部導航與標籤 ---
+# --- 4. 顯示裝飾圖片 (把消失的圖片加回來) ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-# 年月導航
+img_cols = st.columns(6)
+img_prefix = {"purple": "ang", "orange": "fox", "blue": "dog", "pink": "bear"}.get(theme_choice, "fox")
+
+for idx in range(1, 7):
+    img_name = f"{img_prefix}{idx:02d}.jpg"
+    if os.path.exists(img_name):
+        img_cols[idx-1].image(Image.open(img_name), use_container_width=True)
+
+# --- 5. 導航與標籤按鈕 ---
 nav_c1, nav_c2, nav_c3, nav_c4, nav_c5 = st.columns([1, 1, 3, 1, 1])
 with nav_c2:
     if st.button("<", key="prev"):
@@ -96,25 +97,27 @@ with nav_c4:
             st.session_state.curr_year += 1
         st.rerun()
 
-# 快速標籤按鈕 (改進邏輯)
-st.markdown("<br>", unsafe_allow_html=True)
+# 標籤按鈕區
 tag_cols = st.columns(len(QUICK_TAGS) + 2)
 for idx, tag in enumerate(QUICK_TAGS):
     with tag_cols[idx+1]:
         if st.button(f"★{tag}", key=f"btn-{tag}", use_container_width=True):
             if st.session_state.active_date:
                 d_key = st.session_state.active_date
-                # 取得當前內容並附加標籤
+                # 強制抓取當前 session_state 的內容避免遺失
                 current_val = st.session_state.get(f"input-{d_key}", "")
                 new_text = f"{current_val} ★{tag} ".strip()
-                # 同步更新
+                
+                # 同步到所有儲存點
                 st.session_state.notes[d_key] = new_text
                 st.session_state[f"input-{d_key}"] = new_text
                 with open("grid_notes.json", 'w', encoding='utf-8') as f:
                     json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
                 st.rerun()
+            else:
+                st.error("請先點一下要輸入的那一格！")
 
-# --- 5. 月曆主體 ---
+# --- 6. 月曆主體 ---
 def track_click(d_key):
     st.session_state.active_date = d_key
 
@@ -122,7 +125,7 @@ cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_m
 week_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 h_cols = st.columns(7)
 for i, d in enumerate(week_names):
-    h_cols[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin:0;'><b>{d}</b></p>", unsafe_allow_html=True)
+    h_cols[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin:10px 0;'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     cols = st.columns(7)
@@ -131,29 +134,27 @@ for week in cal:
             date_key = f"{st.session_state.curr_year}-{st.session_state.curr_month:02d}-{day:02d}"
             short_key = f"{st.session_state.curr_month:02d}-{day:02d}"
             is_special = short_key in SPECIAL_DAYS
+            is_active = st.session_state.active_date == date_key
             
             with cols[i]:
-                # 日期條
-                is_active = st.session_state.active_date == date_key
+                # 日期標題
                 active_cls = "active-border" if is_active else ""
                 header_cls = "date-header special-header" if is_special else "date-header"
                 heart = " ❤️" if is_special else ""
-                
                 st.markdown(f'<div class="{header_cls} {active_cls}">{day:02d}{heart}</div>', unsafe_allow_html=True)
                 
-                # 直接打字方框
-                # 使用 on_change 確保點擊或打字時鎖定該日期
+                # 打字方框 (外層加上 div 方便選中時高亮)
                 content = st.text_area(
                     label=date_key,
                     value=st.session_state.notes.get(date_key, ""),
                     key=f"input-{date_key}",
-                    height=90,
+                    height=95,
                     label_visibility="collapsed",
                     on_change=track_click,
                     args=(date_key,)
                 )
                 
-                # 自動存檔
+                # 同步存檔
                 if content != st.session_state.notes.get(date_key, ""):
                     st.session_state.notes[date_key] = content
                     with open("grid_notes.json", 'w', encoding='utf-8') as f:
