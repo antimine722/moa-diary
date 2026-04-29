@@ -16,11 +16,11 @@ SPECIAL_DAYS = {
 }
 
 THEMES = {
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "left_imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg"], "right_imgs": ["fox04.jpg", "fox05.jpg", "fox06.jpg"]},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "left_imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg"], "right_imgs": ["dog04.jpg", "dog05.jpg", "dog06.jpg"]},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "left_imgs": ["bear01.jpg", "bear02.jpg", "bear03.jpg"], "right_imgs": ["bear04.jpg", "bear05.jpg", "bear06.jpg"]},
-    "gray": {"bg": "#F5F5F5", "title": "#708090", "left_imgs": ["cat01.jpg", "cat02.jpg", "cat03.jpg"], "right_imgs": ["cat04.jpg", "cat05.jpg", "cat06.jpg"]},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "left_imgs": ["ang01.jpg", "ang02.jpg", "ang03.jpg"], "right_imgs": ["ang04.jpg", "ang05.jpg", "ang06.jpg"]}
+    "YEONJUN": {"bg": "#FFF5EE", "title": "#E9967A", "left_imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg"], "right_imgs": ["fox04.jpg", "fox05.jpg", "fox06.jpg"]},
+    "SOOBIN": {"bg": "#F0F8FF", "title": "#4682B4", "left_imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg"], "right_imgs": ["dog04.jpg", "dog05.jpg", "dog06.jpg"]},
+    "BEOMGYU": {"bg": "#FFF0F5", "title": "#DB7093", "left_imgs": ["bear01.jpg", "bear02.jpg", "bear03.jpg"], "right_imgs": ["bear04.jpg", "bear05.jpg", "bear06.jpg"]},
+    "TAEHYUN": {"bg": "#F5F5F5", "title": "#708090", "left_imgs": ["cat01.jpg", "cat02.jpg", "cat03.jpg"], "right_imgs": ["cat04.jpg", "cat05.jpg", "cat06.jpg"]},
+    "HUENINGKAI": {"bg": "#F8F4FF", "title": "#9370DB", "left_imgs": ["ang01.jpg", "ang02.jpg", "ang03.jpg"], "right_imgs": ["ang04.jpg", "ang05.jpg", "ang06.jpg"]}
 }
 
 # --- 2. 狀態初始化 ---
