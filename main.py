@@ -44,7 +44,7 @@ st.markdown(f"""
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 頂部翻頁按鈕專用樣式：白色底、無陰影、有框線 */
+    /* 頂部翻頁按鈕：白色底方框、無陰影 */
     .nav-container div.stButton > button {{
         background-color: white !important;
         color: {t['title']} !important;
@@ -53,9 +53,12 @@ st.markdown(f"""
         border-radius: 8px !important;
         height: 45px !important;
         font-weight: bold !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }}
 
-    /* 月曆格子樣式 */
+    /* 月曆格子容器樣式 */
     .calendar-cell {{
         background-color: #FFFFFF;
         border: 1px solid {t['title']};
@@ -65,17 +68,35 @@ st.markdown(f"""
         position: relative;
         display: flex;
         flex-direction: column;
+        z-index: 1;
     }}
     .special-cell {{ background-color: {t['special_bg']} !important; }}
     .date-num {{ color: {t['title']}; font-weight: bold; font-size: 1rem; }}
     .special-label {{ color: {t['title']}; font-size: 0.75rem; font-weight: bold; margin-top: auto; }}
     .note-preview {{ color: #555; font-size: 0.7rem; line-height: 1.2; margin-top: 2px; }}
 
-    /* 日曆格子內的「隱形按鈕」樣式 */
+    /* 格子點擊按鈕：必須完全透明且覆蓋整個格子 */
+    .grid-btn-container {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 110px;
+        z-index: 5;
+    }}
     .grid-btn-container div.stButton > button {{
-        width: 100%; height: 110px; background: transparent !important; 
-        border: none !important; color: transparent !important;
-        position: absolute; top: 0; left: 0; z-index: 10;
+        width: 100% !important;
+        height: 110px !important;
+        background: transparent !important;
+        border: none !important;
+        color: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }}
+    /* 防止點擊時出現原生按鈕的藍框或陰影 */
+    .grid-btn-container div.stButton > button:focus, 
+    .grid-btn-container div.stButton > button:active {{
+        background: transparent !important;
         box-shadow: none !important;
     }}
     </style>
@@ -84,21 +105,18 @@ st.markdown(f"""
 # --- 4. 頂部標題 ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-# --- 5. 翻頁導航列 ---
-# 使用 nav-container class 確保按鈕吃到正確樣式 (白色方框，無陰影)
+# --- 5. 翻頁導航列 (方框按鈕) ---
 st.markdown('<div class="nav-container">', unsafe_allow_html=True)
 nav_btn_cols = st.columns(2)
-
 with nav_btn_cols[0]:
-    if st.button("Last Month", key="btn_last", use_container_width=True):
+    if st.button("Last Month", key="nav_prev", use_container_width=True):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
-
 with nav_btn_cols[1]:
-    if st.button("Next Month", key="btn_next", use_container_width=True):
+    if st.button("Next Month", key="nav_next", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
@@ -130,21 +148,24 @@ for week in cal:
             note = st.session_state.notes.get(date_key, "")
             
             with days[i]:
+                # 格子外觀佈局
                 special_class = "special-cell" if is_special else ""
                 heart = " ❤️" if is_special else ""
                 special_text = f'<div class="special-label">{SPECIAL_DAYS[short_key]}</div>' if is_special else ""
                 preview = (note[:15] + '...') if len(note) > 15 else note
 
-                # 繪製格子外觀
+                # 使用容器包裹格子內容與按鈕
                 st.markdown(f"""
-                    <div class="calendar-cell {special_class}">
-                        <div class="date-num">{day:02d}{heart}</div>
-                        <div class="note-preview">{preview}</div>
-                        {special_text}
+                    <div style="position: relative; height: 110px;">
+                        <div class="calendar-cell {special_class}">
+                            <div class="date-num">{day:02d}{heart}</div>
+                            <div class="note-preview">{preview}</div>
+                            {special_text}
+                        </div>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # 繪製點擊按鈕 (包裹在隱形容器中)
+                # 在同一欄位放置透明按鈕，透過 CSS 絕對定位覆蓋
                 st.markdown('<div class="grid-btn-container">', unsafe_allow_html=True)
                 if st.button("", key=f"btn-{date_key}"):
                     st.session_state.editing_date = date_key
