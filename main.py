@@ -109,22 +109,25 @@ with nav_c4:
         st.rerun()
 
 # --- 5. 快速標籤列 (使用 ★ 字號) ---
-st.write("📍 點選下方格子後，再點標籤快速填入：")
+
 tag_cols = st.columns(len(QUICK_TAGS) + 2)
 for idx, tag in enumerate(QUICK_TAGS):
     with tag_cols[idx]:
-        # 當點擊標籤按鈕時
         if st.button(tag, key=f"tag-{tag}", use_container_width=True):
             if st.session_state.active_date:
-                old_text = st.session_state.notes.get(st.session_state.active_date, "")
-                # 這裡改用 ★ 字號方便標記
-                new_text = f"{old_text} ★{tag} ".strip()
+                # 取得當前輸入框的值 (直接從 session_state 拿最準)
+                current_val = st.session_state.get(f"input-{st.session_state.active_date}", "")
+                new_text = f"{current_val} ★{tag} ".strip()
+                
+                # 更新狀態與筆記
                 st.session_state.notes[st.session_state.active_date] = new_text
+                st.session_state[f"input-{st.session_state.active_date}"] = new_text
+                
                 with open("grid_notes.json", 'w', encoding='utf-8') as f:
                     json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
                 st.rerun()
             else:
-                st.warning("請先點擊你想輸入的那一格（打字框）再按標籤唷！")
+                
 
 # --- 6. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
