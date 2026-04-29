@@ -83,7 +83,7 @@ html_code = f"""
 <script>
     let curY = {st.session_state.year};
     let curM = {st.session_state.month};
-    let selId = null; // 用於標籤插入
+    let selId = null;
 
     const ANNIVERSARIES = {{
         "03-04": "🎉 Debut Day", "08-22": "💙 MOA Day", "09-13": "🦊 YEONJUN",
@@ -109,7 +109,9 @@ html_code = f"""
         const daysInMonth = new Date(y, m, 0).getDate();
         const offset = (firstDay === 0) ? 6 : firstDay - 1;
 
-        for(let i=0; i<offset; i++) grid.appendChild(document.createElement('div'));
+        for(let i=0; i<offset; i++) {{
+            grid.appendChild(document.createElement('div'));
+        }}
 
         for(let i=1; i<=daysInMonth; i++) {{
             const mmdd = String(m).padStart(2, '0') + "-" + String(i).padStart(2, '0');
@@ -118,7 +120,6 @@ html_code = f"""
             
             const cell = document.createElement('div');
             cell.id = "c-" + k;
-            // 固定邊框厚度與顏色，移除 transition 效果
             cell.style = "background:white; border:2.5px solid {t['title']}; height:110px; display:flex; flex-direction:column; border-radius:12px; overflow:hidden;";
             
             let anniHtml = "";
@@ -131,7 +132,6 @@ html_code = f"""
                 '<div style="padding: 0 4px;">' + anniHtml + '</div>' +
                 '<textarea id="i-' + k + '" style="flex:1; border:none; outline:none; font-size:11px; padding:5px; resize:none; background:transparent; width:100%; box-sizing:border-box; font-family:inherit;">' + note + '</textarea>';
 
-            // 點擊只記錄 ID 用於 addTag，但不改變樣式
             cell.onclick = function() {{
                 selId = k;
             }};
@@ -146,7 +146,7 @@ html_code = f"""
 
             grid.appendChild(cell);
         }}
-    }
+    }}
 
     function changeMonth(s) {{
         curM += s;
