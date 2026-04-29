@@ -16,11 +16,11 @@ SPECIAL_DAYS = {
 }
 
 THEMES = {
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg"]},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg"]},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "imgs": ["bear01.jpg", "bear02.jpg", "bear03.jpg"]},
-    "gray": {"bg": "#F5F5F5", "title": "#708090", "imgs": ["cat01.jpg", "cat02.jpg", "cat03.jpg"]},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "imgs": ["ang01.jpg", "ang02.jpg", "ang03.jpg"]}
+    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "left_imgs": ["fox01.jpg", "fox02.jpg", "fox03.jpg"], "right_imgs": ["fox04.jpg", "fox05.jpg", "fox06.jpg"]},
+    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "left_imgs": ["dog01.jpg", "dog02.jpg", "dog03.jpg"], "right_imgs": ["dog04.jpg", "dog05.jpg", "dog06.jpg"]},
+    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "left_imgs": ["bear01.jpg", "bear02.jpg", "bear03.jpg"], "right_imgs": ["bear04.jpg", "bear05.jpg", "bear06.jpg"]},
+    "gray": {"bg": "#F5F5F5", "title": "#708090", "left_imgs": ["cat01.jpg", "cat02.jpg", "cat03.jpg"], "right_imgs": ["cat04.jpg", "cat05.jpg", "cat06.jpg"]},
+    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "left_imgs": ["ang01.jpg", "ang02.jpg", "ang03.jpg"], "right_imgs": ["ang04.jpg", "ang05.jpg", "ang06.jpg"]}
 }
 
 # --- 2. 狀態初始化 ---
@@ -32,9 +32,9 @@ if 'notes' not in st.session_state:
         st.session_state.notes = {}
 
 if 'curr_year' not in st.session_state:
-    st.session_state.curr_year = 2026
+    st.session_state.curr_year = datetime.now().year
 if 'curr_month' not in st.session_state:
-    st.session_state.curr_month = 4
+    st.session_state.curr_month = datetime.now().month
 
 # --- 3. UI 樣式 ---
 st.sidebar.title("設定")
@@ -45,19 +45,24 @@ st.markdown(f"""
     <style>
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3, p {{ color: {t['title']} !important; font-family: 'Microsoft JhengHei'; }}
-    .stTextArea textarea {{ border: 2px solid {t['title']}; border-radius: 10px; }}
+    .stTextArea textarea {{ border: 1px solid {t['title']}; border-radius: 10px; padding: 5px;}}
+    .calendar-container {{ border: 1px solid #ccc; padding: 10px; border-radius: 10px; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部裝飾圖案 ---
-st.title("✨ MOA Diary")
+# --- 4. 頂部裝飾圖案 (方案一：使用 st.columns 並限制圖片寬度) ---
+st.title(" MOA Diary")
 
-# 顯示該主題的可愛圖片
-img_cols = st.columns(len(t["imgs"]))
-for idx, img_name in enumerate(t["imgs"]):
+# 合併圖片列表並顯示
+all_imgs = t["left_imgs"] + t["right_imgs"]
+img_cols = st.columns(6) # 建立 6 個 columns
+
+# 在每個 column 中顯示一個圖片，並限制寬度
+for idx, img_name in enumerate(all_imgs):
     if os.path.exists(img_name):
         img = Image.open(img_name)
-        img_cols[idx].image(img, use_container_width=True)
+        # 設定寬度，例如 60px
+        img_cols[idx].image(img, width=60) 
 
 # --- 5. 月份導航 ---
 c1, c2, c3 = st.columns([1, 2, 1])
@@ -69,7 +74,7 @@ with c1:
             st.session_state.curr_year -= 1
         st.rerun()
 with c2:
-    st.markdown(f"<h2 style='text-align: center;'>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: center;'>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</h3>", unsafe_allow_html=True)
 with c3:
     if st.button("❯"):
         st.session_state.curr_month += 1
@@ -82,12 +87,15 @@ with c3:
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
 week_days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-# 顯示星期頭
+# 用 markdown 表格或 st.columns 來實現月曆網格，適配手機
+st.write("---") # 加上一條線分隔
+
+# 用 columns 來實作星期頭
 week_head = st.columns(7)
 for i, d in enumerate(week_days):
     week_head[i].markdown(f"**{d}**")
 
-# 顯示日期格
+# 用 columns 來實作日期格
 for week in cal:
     cols = st.columns(7)
     for i, day in enumerate(week):
@@ -101,6 +109,7 @@ for week in cal:
                 label = f"{day:02d} ❤️"
             
             val = st.session_state.notes.get(date_key, "")
+            # 調整 text_area 高度和樣式
             new_val = cols[i].text_area(label, value=val, key=date_key, height=100)
             
             if new_val != val:
