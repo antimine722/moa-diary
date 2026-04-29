@@ -2,150 +2,98 @@ import streamlit as st
 import calendar
 import json
 import os
-from PIL import Image
 
 # --- 1. 配置與核心資料 ---
 st.set_page_config(page_title="MOA Diary", layout="wide")
 
-SPECIAL_DAYS = {
-    "03-04": "Debut Day", "08-22": "MOA Day", "09-13": "YEONJUN Day",
-    "12-05": "SOOBIN Day", "03-13": "BEOMGYU Day", "02-05": "TAEHYUN Day",
-    "08-14": "HUENINGKAI Day"
-}
+SPECIAL_DAYS = {"03-04": "Debut", "08-22": "MOA", "09-13": "YEONJUN", "12-05": "SOOBIN", "03-13": "BEOMGYU", "02-05": "TAEHYUN", "08-14": "HUENINGKAI"}
 QUICK_TAGS = ["生咖", "演唱會", "應援活動", "回歸"]
-
 THEMES = {
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "special": "#FF6B6B"},
-    "grey": {"bg": "#F5F5F5", "title": "#708090", "special": "#A9A9A9"},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "special": "#B399D4"},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "special": "#5CACEE"},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "special": "#FF69B4"}
+    "orange": {"bg": "#FFF5EE", "title": "#E9967A", "cell": "#FFF"},
+    "grey": {"bg": "#F5F5F5", "title": "#708090", "cell": "#FFF"},
+    "purple": {"bg": "#F8F4FF", "title": "#9370DB", "cell": "#FFF"},
+    "blue": {"bg": "#F0F8FF", "title": "#4682B4", "cell": "#FFF"},
+    "pink": {"bg": "#FFF0F5", "title": "#DB7093", "cell": "#FFF"}
 }
 
-# --- 2. 狀態初始化 ---
+# --- 2. 狀態管理 ---
 if 'notes' not in st.session_state:
     if os.path.exists("grid_notes.json"):
-        with open("grid_notes.json", 'r', encoding='utf-8') as f:
-            st.session_state.notes = json.load(f)
+        with open("grid_notes.json", 'r', encoding='utf-8') as f: st.session_state.notes = json.load(f)
     else: st.session_state.notes = {}
 
-if 'curr_year' not in st.session_state: st.session_state.curr_year = 2026
-if 'curr_month' not in st.session_state: st.session_state.curr_month = 4
-if 'sel_date' not in st.session_state: st.session_state.sel_date = None
+for k in ['curr_year', 'curr_month', 'sel_date']:
+    if k not in st.session_state: st.session_state[k] = (2026 if k=='curr_year' else (4 if k=='curr_month' else None))
 
-# --- 3. 強制手機版 7 欄佈局的 CSS ---
+# --- 3. 強制排版 CSS ---
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
 t = THEMES[theme_choice]
 
 st.markdown(f"""
     <style>
     .stApp {{ background-color: {t['bg']}; }}
-    h1 {{ color: {t['title']} !important; text-align: center; margin-bottom: 0; }}
-    
-    /* 強制在手機上維持橫向排列 */
-    [data-testid="column"] {{
-        min-width: 0 !important;
-        flex: 1 1 0% !important;
-    }}
-    
-    [data-testid="stHorizontalBlock"] {{
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 2px !important;
-    }}
-
-    /* 日期按鈕與標籤按鈕 */
-    .stButton > button {{
-        width: 100%;
-        padding: 2px !important;
-        font-size: 10px !important;
-        border-radius: 4px !important;
-        border: 1px solid {t['title']} !important;
-    }}
-    
-    /* 選中狀態 */
-    .stButton > button[kind="primary"] {{
-        background-color: {t['title']} !important;
-        color: white !important;
-    }}
-
-    /* 輸入框在手機上變小一點以免爆掉 */
-    div[data-baseweb="textarea"] {{
-        border: 1px solid {t['title']} !important;
-        border-top: none !important;
-        background-color: white !important;
-    }}
-    textarea {{
-        font-size: 11px !important;
-        padding: 5px !important;
-    }}
+    /* 強制橫向滾動容器，確保格子不被壓縮 */
+    .cal-container {{ overflow-x: auto; width: 100%; }}
+    .cal-table {{ border-collapse: collapse; width: 100%; min-width: 350px; table-layout: fixed; }}
+    .cal-table th, .cal-table td {{ border: 1px solid {t['title']}; padding: 2px; text-align: center; background: {t['cell']}; vertical-align: top; }}
+    .cal-table th {{ background: {t['title']}; color: white; font-size: 10px; }}
+    .day-num {{ font-weight: bold; font-size: 12px; color: {t['title']}; margin: 2px; }}
+    .selected-cell {{ background-color: #FFF9C4 !important; border: 2px solid gold !important; }}
+    .special-text {{ color: red; font-size: 8px; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 裝飾與標籤列 ---
-st.markdown(f"<h1>MOA Diary</h1>", unsafe_allow_html=True)
+# --- 4. 頂部控制區 ---
+st.title("✨ MOA Diary")
 
-# 圖片列 (強制 6 欄)
-img_cols = st.columns(6)
-prefix = {"purple": "ang", "orange": "fox", "blue": "dog", "pink": "bear", "grey": "wolf"}.get(theme_choice, "fox")
-for idx in range(1, 7):
-    path = f"{prefix}{idx:02d}.jpg"
-    if os.path.exists(path):
-        img_cols[idx-1].image(Image.open(path), use_container_width=True)
-
-# 導航
-c1, c2, c3, c4, c5 = st.columns([1, 1, 3, 1, 1])
-with c2: 
-    if st.button("<", key="p"):
-        st.session_state.curr_month -= 1
-        st.rerun()
-with c3:
-    st.markdown(f"<p style='text-align:center; color:{t['title']}; font-weight:bold; margin-top:5px;'>{st.session_state.curr_year} / {st.session_state.curr_month:02d}</p>", unsafe_allow_html=True)
-with c4:
-    if st.button(">", key="n"):
-        st.session_state.curr_month += 1
-        st.rerun()
-
-# 標籤列 (強制橫排)
+# 標籤列
 tag_cols = st.columns(len(QUICK_TAGS))
-for idx, tag in enumerate(QUICK_TAGS):
-    if tag_cols[idx].button(f"★{tag}", key=f"t-{tag}"):
+for i, tag in enumerate(QUICK_TAGS):
+    if tag_cols[i].button(f"★{tag}", use_container_width=True):
         if st.session_state.sel_date:
             d = st.session_state.sel_date
-            st.session_state.notes[d] = f"{st.session_state.notes.get(d, '')} ★{tag} ".strip()
-            st.session_state[f"txt-{d}"] = st.session_state.notes[d]
-            with open("grid_notes.json", 'w', encoding='utf-8') as f:
-                json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
+            st.session_state.notes[d] = f"{st.session_state.notes.get(d, '')} ★{tag}".strip()
+            with open("grid_notes.json", 'w', encoding='utf-8') as f: json.dump(st.session_state.notes, f, ensure_ascii=False)
             st.rerun()
 
-# --- 5. 月曆主體 ---
-week_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-h_cols = st.columns(7)
-for i, name in enumerate(week_names):
-    h_cols[i].markdown(f"<p style='text-align:center; color:{t['title']}; font-size:9px; margin:0;'><b>{name}</b></p>", unsafe_allow_html=True)
-
+# --- 5. 手機穩定版月曆渲染 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
+days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+# 建立 HTML 表格
+html_code = f'<div class="cal-container"><table class="cal-table"><thead><tr>'
+for d in days: html_code += f'<th>{d}</th>'
+html_code += '</tr></thead><tbody>'
+
 for week in cal:
-    cols = st.columns(7)
-    for i, day in enumerate(week):
-        if day != 0:
+    html_code += '<tr>'
+    for day in week:
+        if day == 0:
+            html_code += '<td></td>'
+        else:
             d_key = f"{st.session_state.curr_year}-{st.session_state.curr_month:02d}-{day:02d}"
-            is_spec = f"{st.session_state.curr_month:02d}-{day:02d}" in SPECIAL_DAYS
+            s_key = f"{st.session_state.curr_month:02d}-{day:02d}"
             is_sel = st.session_state.sel_date == d_key
+            sel_class = "selected-cell" if is_sel else ""
+            note = st.session_state.notes.get(d_key, "")
+            spec = f"<div class='special-text'>{SPECIAL_DAYS[s_key]}</div>" if s_key in SPECIAL_DAYS else ""
             
-            with cols[i]:
-                # 日期按鈕
-                if st.button(f"{day:02d}{'❤️' if is_spec else ''}", key=f"btn-{d_key}", 
-                             type="primary" if is_sel else "secondary"):
-                    st.session_state.sel_date = d_key
-                    st.rerun()
-                
-                # 文字輸入 (高度縮小以符合手機螢幕)
-                txt = st.text_area(label=d_key, value=st.session_state.notes.get(d_key, ""), 
-                                   key=f"txt-{d_key}", height=60, label_visibility="collapsed")
-                
-                if txt != st.session_state.notes.get(d_key, ""):
-                    st.session_state.notes[d_key] = txt
-                    with open("grid_notes.json", 'w', encoding='utf-8') as f:
-                        json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
+            html_code += f'<td class="{sel_class}"><div class="day-num">{day}</div><div style="font-size:10px; height:40px; overflow:hidden;">{note}</div>{spec}</td>'
+    html_code += '</tr>'
+html_code += '</tbody></table></div>'
+
+st.markdown(html_code, unsafe_allow_html=True)
+
+# --- 6. 輸入編輯區 ---
+st.markdown("---")
+if st.session_state.sel_date:
+    st.write(f"正在編輯: {st.session_state.sel_date}")
+    new_txt = st.text_area("內容輸入", value=st.session_state.notes.get(st.session_state.sel_date, ""), key="edit_area")
+    if st.button("儲存內容"):
+        st.session_state.notes[st.session_state.sel_date] = new_txt
+        with open("grid_notes.json", 'w', encoding='utf-8') as f: json.dump(st.session_state.notes, f, ensure_ascii=False)
+        st.rerun()
+
+# 選擇日期按鈕區 (因為 HTML 無法直接觸發 Streamlit 事件，我們用一個選擇器)
+all_days = [f"{st.session_state.curr_year}-{st.session_state.curr_month:02d}-{d:02d}" for week in cal for d in week if d != 0]
+st.session_state.sel_date = st.selectbox("請先在此選擇日期，再使用上方標籤或下方輸入框：", ["請選擇"] + all_days)
