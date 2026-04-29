@@ -67,20 +67,22 @@ st.markdown(f"""
         position: absolute; top: 0; left: 0; z-index: 10;
     }}
 
-    /* 頂部導航按鈕樣式修正 */
+    /* 頂部導航按鈕樣式 */
     .nav-btn-style button {{
         background: transparent !important;
         border: none !important;
         color: {t['title']} !important;
-        font-size: 30px !important;
+        font-size: 32px !important;
         line-height: 1 !important;
-        padding-top: 10px !important;
+        padding-top: 15px !important;
+        width: 100% !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
 # --- 4. 頂部標題與翻頁 (< MOA Diary >) ---
-header_cols = st.columns([1, 4, 1])
+# 使用 columns 讓按鈕緊貼標題兩側
+header_cols = st.columns([1, 3, 1])
 
 with header_cols[0]:
     st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
