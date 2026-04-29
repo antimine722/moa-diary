@@ -40,16 +40,10 @@ t = THEMES[theme_choice]
 st.markdown(f"""
     <style>
     .stApp {{ background-color: {t['bg']}; }}
-    h1 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
+    h1 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; padding-bottom: 20px; }}
     
-    /* 頂部導航按鈕樣式 */
-    .nav-btn div.stButton > button {{
-        background-color: white !important;
-        color: {t['title']} !important;
-        border: 1px solid {t['title']} !important;
-        border-radius: 20px !important;
-        font-weight: bold !important;
-    }}
+    /* 移除所有標籤佔用的空間 */
+    div[data-testid="stWidgetLabel"] {{ display: none !important; }}
 
     /* 日期顯示列 (上方色塊) */
     .date-header {{
@@ -58,13 +52,10 @@ st.markdown(f"""
         font-weight: bold;
         padding: 4px 10px;
         border-radius: 8px 8px 0 0;
-        font-size: 1.1rem;
-        text-align: left;
+        font-size: 1rem;
     }}
     
-    .special-header {{
-        background-color: #FF6B6B !important;
-    }}
+    .special-header {{ background-color: #FF6B6B !important; }}
 
     /* 打字方框樣式 */
     div[data-baseweb="textarea"] {{
@@ -73,56 +64,49 @@ st.markdown(f"""
         border-radius: 0 0 8px 8px !important;
         background-color: white !important;
     }}
-    
     textarea {{
         font-size: 0.9rem !important;
         padding: 8px !important;
         color: #333 !important;
     }}
-
-    /* 隱藏標籤空間 */
-    div[data-testid="stWidgetLabel"] {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部裝飾與導航 ---
+# --- 4. 頂部裝飾 ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-# 顯示月曆裝飾圖
+# 顯示裝飾圖
 img_cols = st.columns(6)
-imgs = ["fox01.jpg", "fox02.jpg", "fox03.jpg", "fox04.jpg", "fox05.jpg", "fox06.jpg"] # 預設圖片清單
+imgs = ["fox01.jpg", "fox02.jpg", "fox03.jpg", "fox04.jpg", "fox05.jpg", "fox06.jpg"]
 for idx, img_name in enumerate(imgs):
     if os.path.exists(img_name):
         img_cols[idx].image(Image.open(img_name), use_container_width=True)
 
-# 翻頁導航 (只有按鈕，不顯示中間的年月日)
-st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
+# 導航按鈕 (只有按鈕與當月數字)
 nav_c1, nav_c2, nav_c3, nav_c4, nav_c5 = st.columns([1, 1, 2, 1, 1])
 with nav_c2:
-    if st.button("＜", use_container_width=True):
+    if st.button("＜", key="prev", use_container_width=True):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
 with nav_c3:
-    # 這裡只顯示大的月份標題
-    st.markdown(f"<h2 style='text-align:center; color:{t['title']}; margin:0;'>{st.session_state.curr_month:02d} 月</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:center; color:{t['title']}; margin:0;'>{st.session_state.curr_month} 月</h2>", unsafe_allow_html=True)
 with nav_c4:
-    if st.button("＞", use_container_width=True):
+    if st.button("＞", key="next", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 5. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
 week_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 week_head = st.columns(7)
 for i, d in enumerate(week_names):
-    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; margin-bottom:5px;'><b>{d}</b></p>", unsafe_allow_html=True)
+    week_head[i].markdown(f"<p style='text-align:center; color:{t['title']}; font-size:0.8rem; margin:10px 0;'><b>{d}</b></p>", unsafe_allow_html=True)
 
 for week in cal:
     cols = st.columns(7)
@@ -133,26 +117,25 @@ for week in cal:
             is_special = short_key in SPECIAL_DAYS
             
             with cols[i]:
-                # 1. 上方日期標題 (只顯示日期數字與愛心)
+                # 1. 上方日期條
                 header_class = "date-header special-header" if is_special else "date-header"
                 heart = " ❤️" if is_special else ""
                 st.markdown(f'<div class="{header_class}">{day:02d}{heart}</div>', unsafe_allow_html=True)
                 
-                # 2. 下方直接打字區域 (已移除中間的年月日顯示)
+                # 2. 打字方框 (關鍵修正：label_visibility="collapsed")
                 current_text = st.session_state.notes.get(date_key, "")
                 new_text = st.text_area(
-                    label=date_key, # 標籤會被隱藏
+                    label="hidden", 
                     value=current_text,
                     key=f"input-{date_key}",
-                    height=100
+                    height=100,
+                    label_visibility="collapsed" # 這行會把 2026-03-02 隱藏
                 )
                 
-                # 儲存邏輯
                 if new_text != current_text:
                     st.session_state.notes[date_key] = new_text
                     with open("grid_notes.json", 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.notes, f, ensure_ascii=False, indent=4)
 
-                # 特別日子名稱 (顯示在最下方)
                 if is_special:
                     st.markdown(f"<p style='font-size:0.7rem; color:#FF6B6B; text-align:center; margin:0;'>{SPECIAL_DAYS[short_key]}</p>", unsafe_allow_html=True)
