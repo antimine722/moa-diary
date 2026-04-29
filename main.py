@@ -3,13 +3,34 @@ import streamlit as st
 # --- 1. 頁面配置 ---
 st.set_page_config(page_title="MOA Diary", layout="wide")
 
-# --- 2. 完整主題設定 ---
+# --- 2. 完整主題設定 (包含連動圖片) ---
+# 我為每個主題選定了對應的裝飾動物網址 (左3張，右3張)
 THEMES = {
-    "grey": {"bg": "#F5F5F5", "title": "#708090"},
-    "orange": {"bg": "#FFF5EE", "title": "#E9967A"},
-    "purple": {"bg": "#F8F4FF", "title": "#9370DB"},
-    "pink": {"bg": "#FFF0F5", "title": "#DB7093"},
-    "blue": {"bg": "#F0F8FF", "title": "#4682B4"}
+    "orange": {
+        "bg": "#FFF5EE", "title": "#E9967A",
+        "imgs_l": ["https://img.icons8.com/puffy/48/fox.png", "https://img.icons8.com/puffy/48/null/fox.png", "https://img.icons8.com/puffy/48/fox.png"],
+        "imgs_r": ["https://img.icons8.com/puffy/48/fox.png", "https://img.icons8.com/puffy/48/null/fox.png", "https://img.icons8.com/puffy/48/fox.png"]
+    },
+    "grey": {
+        "bg": "#F5F5F5", "title": "#708090",
+        "imgs_l": ["https://img.icons8.com/puffy/48/wolf.png", "https://img.icons8.com/puffy/48/null/wolf.png", "https://img.icons8.com/puffy/48/wolf.png"],
+        "imgs_r": ["https://img.icons8.com/puffy/48/wolf.png", "https://img.icons8.com/puffy/48/null/wolf.png", "https://img.icons8.com/puffy/48/wolf.png"]
+    },
+    "purple": {
+        "bg": "#F8F4FF", "title": "#9370DB",
+        "imgs_l": ["https://img.icons8.com/puffy/48/cat.png", "https://img.icons8.com/puffy/48/null/cat.png", "https://img.icons8.com/puffy/48/cat.png"],
+        "imgs_r": ["https://img.icons8.com/puffy/48/cat.png", "https://img.icons8.com/puffy/48/null/cat.png", "https://img.icons8.com/puffy/48/cat.png"]
+    },
+    "pink": {
+        "bg": "#FFF0F5", "title": "#DB7093",
+        "imgs_l": ["https://img.icons8.com/puffy/48/rabbit.png", "https://img.icons8.com/puffy/48/null/rabbit.png", "https://img.icons8.com/puffy/48/rabbit.png"],
+        "imgs_r": ["https://img.icons8.com/puffy/48/rabbit.png", "https://img.icons8.com/puffy/48/null/rabbit.png", "https://img.icons8.com/puffy/48/rabbit.png"]
+    },
+    "blue": {
+        "bg": "#F0F8FF", "title": "#4682B4",
+        "imgs_l": ["https://img.icons8.com/puffy/48/dog.png", "https://img.icons8.com/puffy/48/null/dog.png", "https://img.icons8.com/puffy/48/dog.png"],
+        "imgs_r": ["https://img.icons8.com/puffy/48/dog.png", "https://img.icons8.com/puffy/48/null/dog.png", "https://img.icons8.com/puffy/48/dog.png"]
+    }
 }
 
 theme_choice = st.sidebar.selectbox("切換主題", list(THEMES.keys()))
@@ -19,50 +40,60 @@ t = THEMES[theme_choice]
 if 'year' not in st.session_state: st.session_state.year = 2026
 if 'month' not in st.session_state: st.session_state.month = 4
 
-# --- 3. 頂部原生控制區 ---
-st.markdown(f"<h1 style='text-align: center; color: {t['title']};'>✨ MOA Diary</h1>", unsafe_allow_html=True)
+# --- 3. 頂部原生控制區 (將其隱藏，因為我們要整合進 HTML 裡固定住) ---
+# st.markdown(f"<h1 style='text-align: center; color: {t['title']};'>✨ MOA Diary</h1>", unsafe_allow_html=True)
+# (移除原生的 col1, col2, col3 翻頁按鈕，因為我們要整合進 HTML)
 
-col1, col2, col3 = st.columns([1, 2, 1])
-with col1:
-    if st.button("⬅️ 上個月"):
-        st.session_state.month -= 1
-        if st.session_state.month < 1:
-            st.session_state.month = 12
-            st.session_state.year -= 1
-        st.rerun()
-
-with col2:
-    st.markdown(f"<h2 style='text-align: center; color: {t['title']}; margin: 0;'>{st.session_state.year} / {st.session_state.month:02d}</h2>", unsafe_allow_html=True)
-
-with col3:
-    if st.button("下個月 ➡️"):
-        st.session_state.month += 1
-        if st.session_state.month > 12:
-            st.session_state.month = 1
-            st.session_state.year += 1
-        st.rerun()
-
-# --- 4. 嵌入式 HTML/JS (鎖定手機 7 欄排版) ---
+# --- 4. 嵌入式 HTML/JS (整合圖片、固定標題、翻頁按鈕與 7 欄排版) ---
 html_code = f"""
 <div id="moa-app" style="background: {t['bg']}; padding: 10px; font-family: sans-serif; border-radius: 10px;">
     
+    <div style="position: sticky; top: 0; background: {t['bg']}; padding: 10px 0; z-index: 100; border-bottom: 2px solid {t['title']}; margin-bottom: 15px;">
+        
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+            <div style="display: flex; gap: 5px;">
+                <img src="{t['imgs_l'][0]}" width="30" height="30">
+                <img src="{t['imgs_l'][1]}" width="30" height="30">
+                <img src="{t['imgs_l'][2]}" width="30" height="30">
+            </div>
+            
+            <h1 style="margin: 0; color: {t['title']}; font-size: 1.5rem; white-space: nowrap;">✨ MOA Diary</h1>
+            
+            <div style="display: flex; gap: 5px;">
+                <img src="{t['imgs_r'][0]}" width="30" height="30">
+                <img src="{t['imgs_r'][1]}" width="30" height="30">
+                <img src="{t['imgs_r'][2]}" width="30" height="30">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 80%; margin: 0 auto;">
+            <button onclick="changeMonth(-1)" style="padding: 5px 12px; border-radius: 5px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-weight: bold; cursor: pointer;">⬅️</button>
+            <h2 id="currentDisplay" style="margin: 0; color: {t['title']}; font-size: 1.1rem;">{st.session_state.year} / {st.session_state.month:02d}</h2>
+            <button onclick="changeMonth(1)" style="padding: 5px 12px; border-radius: 5px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-weight: bold; cursor: pointer;">➡️</button>
+        </div>
+    </div>
+
     <div style="display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px;">
-        <button onclick="addTag('★生咖')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']};">★生咖</button>
-        <button onclick="addTag('★演唱會')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']};">★演唱會</button>
-        <button onclick="addTag('★應援')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']};">★應援</button>
-        <button onclick="addTag('★回歸')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']};">★回歸</button>
+        <button onclick="addTag('★生咖')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px; cursor: pointer;">★生咖</button>
+        <button onclick="addTag('★演唱會')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px; cursor: pointer;">★演唱會</button>
+        <button onclick="addTag('★應援')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px; cursor: pointer;">★應援</button>
+        <button onclick="addTag('★回歸')" style="padding: 6px 12px; border-radius: 15px; border: 1px solid {t['title']}; background: white; color: {t['title']}; font-size: 13px; cursor: pointer;">★回歸</button>
     </div>
 
     <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;"></div>
 </div>
 
 <script>
-    const currentYear = {st.session_state.year};
-    const currentMonth = {st.session_state.month};
+    // 從 Python 傳入初始狀態
+    let currentYear = {st.session_state.year};
+    let currentMonth = {st.session_state.month};
     let selectedId = null;
 
     function renderCalendar(year, month) {{
         const grid = document.getElementById('calendar-grid');
+        const display = document.getElementById('currentDisplay');
+        display.innerText = `${{year}} / ${{String(month).padStart(2, '0')}}`;
+        
         grid.innerHTML = '';
         
         const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -83,7 +114,7 @@ html_code = f"""
             let cell = document.createElement('div');
             cell.id = `cell-${{dKey}}`;
             cell.onclick = () => selectDay(dKey);
-            cell.style = "background:white; border:1px solid #ddd; height:85px; display:flex; flex-direction:column; border-radius:4px; overflow:hidden;";
+            cell.style = "background:white; border:1px solid #ddd; height:85px; display:flex; flex-direction:column; border-radius:4px; overflow:hidden; cursor: pointer;";
             
             cell.innerHTML = `
                 <div style="font-size:10px; padding:2px; background:#fafafa; border-bottom:1px solid #eee;">${{i}}</div>
@@ -91,6 +122,14 @@ html_code = f"""
             `;
             grid.appendChild(cell);
         }}
+    }}
+
+    // [核心邏輯] JS 翻頁，不觸發 Python Rerun
+    function changeMonth(step) {{
+        currentMonth += step;
+        if (currentMonth > 12) {{ currentMonth = 1; currentYear++; }}
+        if (currentMonth < 1) {{ currentMonth = 12; currentYear--; }}
+        renderCalendar(currentYear, currentMonth);
     }}
 
     function selectDay(id) {{
@@ -113,8 +152,10 @@ html_code = f"""
         saveData(selectedId);
     }}
 
+    // 初始化渲染
     renderCalendar(currentYear, currentMonth);
 </script>
 """
 
-st.components.v1.html(html_code, height=900, scrolling=True)
+# 將 scrolling 設為 false，因為我們希望在組件內部處理捲動
+st.components.v1.html(html_code, height=1000, scrolling=True)
