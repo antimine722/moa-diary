@@ -88,42 +88,45 @@ st.markdown(f"""
 # --- 4. 頂部標題 ---
 st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
 
-# --- 5. 導航與圖片整合區 (修正翻頁按鈕消失的問題) ---
-# 建立一個 3 欄位，比例為 [1, 4, 1]
-col_left, col_mid, col_right = st.columns([1, 4, 1])
+# --- 5. 翻頁導航列 (具備方框的按鈕) ---
+# 使用 st.columns 將畫面上方橫向切分為三區，比例 [1, 2, 1] 確保左右按鈕夠大
+nav_cols = st.columns([1, 2, 1])
 
-with col_left:
-    # 強制建立一個實體按鈕，確保手機點得到
-    if st.button("◀", key="nav_prev", use_container_width=True):
+with nav_cols[0]:
+    # 使用 st.button 會自動產生一個帶有方框的實體按鈕
+    # use_container_width=True 會讓方框填滿左側區塊，更好點擊
+    if st.button("<", key="nav_prev", use_container_width=True):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
 
-with col_mid:
-    # 中間放置裝飾圖片與年月
-    # 圖片區
-    img_cols = st.columns(6)
-    for idx, img_name in enumerate(t["imgs"]):
-        if os.path.exists(img_name):
-            img_cols[idx].image(Image.open(img_name), use_container_width=True)
-    
-    # 年月顯示
+with nav_cols[1]:
+    # 將年月顯示在中間，並加上一些上邊距讓它跟兩側按鈕對齊
     st.markdown(f"""
-        <h2 style='text-align: center; margin-top: 10px; color: {t['title']};'>
-            {st.session_state.curr_year} / {st.session_state.curr_month:02d}
-        </h2>
+        <div style="text-align: center; padding-top: 5px;">
+            <h2 style="margin: 0; color: {t['title']}; font-size: 1.5rem;">
+                {st.session_state.curr_year} / {st.session_state.curr_month:02d}
+            </h2>
+        </div>
     """, unsafe_allow_html=True)
 
-with col_right:
-    # 右側翻頁實體按鈕
-    if st.button("▶", key="nav_next", use_container_width=True):
+with nav_cols[2]:
+    # 右側的方框按鈕
+    if st.button(">", key="nav_next", use_container_width=True):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
+
+# --- 6. 裝飾圖片區 ---
+# 圖片移動到導航列下方，避免與翻頁按鈕擠在一起
+img_cols = st.columns(6)
+for idx, img_name in enumerate(t["imgs"]):
+    if os.path.exists(img_name):
+        img_cols[idx].image(Image.open(img_name), use_container_width=True)
 
 # --- 6. 標籤選擇區 (如果有需要可以保留) ---
 st.columns(4) # 這裡可以放你的 生咖/演唱會 等標籤按鈕
