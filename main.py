@@ -44,24 +44,7 @@ st.markdown(f"""
     .stApp {{ background-color: {t['bg']}; }}
     h1, h2, h3 {{ color: {t['title']} !important; text-align: center; font-family: 'Microsoft JhengHei'; }}
     
-    /* 移除按鈕陰影與立體感 */
-    div.stButton > button {{
-        box-shadow: none !important;
-        border: 1px solid {t['title']} !important;
-        background-color: white !important;
-        color: {t['title']} !important;
-        border-radius: 5px !important;
-    }}
-    div.stButton > button:hover {{
-        background-color: {t['bg']} !important;
-        border: 1px solid {t['title']} !important;
-    }}
-    div.stButton > button:active {{
-        box-shadow: none !important;
-        transform: none !important;
-    }}
-
-    /* 月曆格子樣式 */
+    /* 格子基本樣式 */
     .calendar-cell {{
         background-color: #FFFFFF;
         border: 1px solid {t['title']};
@@ -72,54 +55,66 @@ st.markdown(f"""
         display: flex;
         flex-direction: column;
     }}
+    
     .special-cell {{ background-color: {t['special_bg']} !important; }}
     .date-num {{ color: {t['title']}; font-weight: bold; font-size: 1rem; }}
     .special-label {{ color: {t['title']}; font-size: 0.75rem; font-weight: bold; margin-top: auto; }}
     .note-preview {{ color: #555; font-size: 0.7rem; line-height: 1.2; margin-top: 2px; }}
 
-    /* 隱形按鈕覆蓋格子專用 (不影響頂部按鈕) */
-    div.calendar-grid-btn > div.stButton > button {{
-        width: 100%; height: 110px; background: transparent !important; border: none !important; color: transparent !important;
+    /* 隱形按鈕覆蓋格子 */
+    div.stButton > button {{
+        width: 100%; height: 110px; background: transparent; border: none; color: transparent;
         position: absolute; top: 0; left: 0; z-index: 10;
+    }}
+
+    /* 頂部導航按鈕樣式 */
+    .nav-btn-style button {{
+        background: transparent !important;
+        border: none !important;
+        color: {t['title']} !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+        padding-top: 15px !important;
+        width: 100% !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. 頂部標題 ---
-st.markdown(f"<h1>✨ MOA Diary</h1>", unsafe_allow_html=True)
+# --- 4. 頂部標題與翻頁 (< MOA Diary >) ---
+# 使用 columns 讓按鈕緊貼標題兩側
+header_cols = st.columns([1, 3, 1])
 
-# --- 5. 翻頁導航列 (具備方框與文字) ---
-nav_cols = st.columns(2)
-
-with nav_cols[0]:
-    if st.button("Last Month", key="nav_prev", use_container_width=True):
+with header_cols[0]:
+    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
+    if st.button("<", key="nav_l"):
         st.session_state.curr_month -= 1
         if st.session_state.curr_month == 0:
             st.session_state.curr_month = 12
             st.session_state.curr_year -= 1
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with nav_cols[1]:
-    if st.button("Next Month", key="nav_next", use_container_width=True):
+with header_cols[1]:
+    st.title("✨ MOA Diary")
+
+with header_cols[2]:
+    st.markdown('<div class="nav-btn-style">', unsafe_allow_html=True)
+    if st.button(">", key="nav_r"):
         st.session_state.curr_month += 1
         if st.session_state.curr_month == 13:
             st.session_state.curr_month = 1
             st.session_state.curr_year += 1
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 6. 年月顯示與裝飾圖 ---
-st.markdown(f"""
-    <div style="text-align: center; margin: 15px 0;">
-        <h2 style="margin: 0; color: {t['title']}; font-size: 1.8rem;">
-            {st.session_state.curr_year} / {st.session_state.curr_month:02d}
-        </h2>
-    </div>
-""", unsafe_allow_html=True)
-
+# --- 5. 縮小圖裝飾 ---
 img_cols = st.columns(6)
 for idx, img_name in enumerate(t["imgs"]):
     if os.path.exists(img_name):
-        img_cols[idx].image(Image.open(img_name), use_container_width=True)
+        img_cols[idx].image(Image.open(img_name), width=45)
+
+# --- 6. 年月顯示 ---
+st.subheader(f"{st.session_state.curr_year} / {st.session_state.curr_month:02d}")
 
 # --- 7. 月曆主體 ---
 cal = calendar.monthcalendar(st.session_state.curr_year, st.session_state.curr_month)
@@ -150,11 +145,8 @@ for week in cal:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # 包裹在特定 div 中以套用隱形樣式
-                st.markdown('<div class="calendar-grid-btn">', unsafe_allow_html=True)
                 if st.button("", key=f"btn-{date_key}"):
                     st.session_state.editing_date = date_key
-                st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 8. 編輯視窗 ---
 if st.session_state.editing_date:
